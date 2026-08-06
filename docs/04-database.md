@@ -14,7 +14,7 @@ PostgreSQL is Prizen's system of record. The schema mirrors module ownership: ta
 
 | Module       | Tables                                       | Notes                                         |
 | ------------ | -------------------------------------------- | --------------------------------------------- |
-| Marketplace  | `marketplaces`, `marketplace_configurations` | Provider configuration and encrypted access   |
+| Marketplace  | `marketplaces`                               | Provider configuration and availability       |
 | Product      | `products`, `product_images`                 | Canonical marketplace product metadata        |
 | Watchlist    | `watchlists`                                 | Per-user target and pause preference          |
 | Tracker      | `price_history`, `latest_prices`             | Immutable observations and current projection |

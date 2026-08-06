@@ -1,239 +1,214 @@
 const allowedHosts = new Set(['amazon.in', 'www.amazon.in', 'amazon.com', 'www.amazon.com']);
 const requestTimeoutMs = 15_000;
-const creatorsApiUrl = 'https://creatorsapi.amazon/catalog/v1/getItems';
-
-const tokenEndpoints: Record<string, string> = {
-	'3.1': 'https://api.amazon.com/auth/o2/token',
-	'3.2': 'https://api.amazon.co.uk/auth/o2/token',
-	'3.3': 'https://api.amazon.co.jp/auth/o2/token'
-};
-
-export type AmazonCreatorsConfig = {
-	credentialId: string;
-	credentialSecret: string;
-	credentialVersion: string;
-	partnerTagIndia?: string;
-	partnerTagUnitedStates?: string;
-};
 
 export type AmazonProductSnapshot = {
-	asin: string;
-	parentAsin: string | null;
-	variantId: string;
 	title: string;
 	url: string;
 	currentPrice: number | null;
 	currency: string;
 	availability: 'in_stock' | 'out_of_stock';
-	sellerId: string | null;
-	sellerName: string | null;
-	deliveryContext: 'marketplace_default';
 };
 
 export class MarketplaceFetchError extends Error {
 	constructor(
 		message: string,
-		readonly status: 422 | 429 | 502 | 503
+		readonly status: 429 | 502
 	) {
 		super(message);
 	}
 }
 
-type AccessToken = { value: string; expiresAt: number };
-const tokenCache = new Map<string, AccessToken>();
-
-type CreatorsApiResponse = {
-	errors?: { code?: string; message?: string }[];
-	itemsResult?: {
-		items?: Array<{
-			asin?: string;
-			parentASIN?: string;
-			detailPageURL?: string;
-			itemInfo?: { title?: { displayValue?: string } };
-			offersV2?: {
-				listings?: Array<{
-					isBuyBoxWinner?: boolean;
-					availability?: { type?: string; message?: string };
-					merchantInfo?: { id?: string; name?: string };
-					price?: { money?: { amount?: number; currency?: string } };
-				}>;
-			};
-		}>;
-	};
-};
-
-function productAsin(url: URL) {
-	return url.pathname.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})(?:\/|$)/i)?.[1].toUpperCase();
-}
-
-function marketplaceFor(url: URL) {
-	return url.hostname.endsWith('amazon.in') ? 'www.amazon.in' : 'www.amazon.com';
-}
-
-function partnerTagFor(marketplace: string, config: AmazonCreatorsConfig) {
-	return marketplace === 'www.amazon.in' ? config.partnerTagIndia : config.partnerTagUnitedStates;
-}
-
-function normalizedAvailability(type: string | undefined) {
-	return type === 'IN_STOCK' || type === 'IN_STOCK_SCARCE'
-		? ('in_stock' as const)
-		: ('out_of_stock' as const);
-}
-
-function marketplaceError(status: number, operation: 'authenticate with' | 'query') {
-	if (status === 429) {
-		return new MarketplaceFetchError(
-			`Amazon Creators API throttled this tracker while trying to ${operation}. Prizen will retry later.`,
-			429
-		);
+function getMeta(html: string, key: string) {
+	for (const tag of html.matchAll(/<meta\s+[^>]*>/gi)) {
+		const name = tag[0].match(/(?:property|name)=["']([^"']+)["']/i)?.[1];
+		const content = tag[0].match(/content=["']([^"']+)["']/i)?.[1];
+		if (name?.toLowerCase() === key.toLowerCase() && content) return content;
 	}
-	return new MarketplaceFetchError(
-		`Amazon Creators API could not ${operation === 'query' ? 'return this product' : 'authenticate this installation'}. Check the owner-managed Amazon configuration.`,
-		502
+}
+
+function parsePrice(value: string | undefined) {
+	const match = value?.replaceAll(',', '').match(/([0-9]+(?:\.\d{1,2})?)/)?.[1];
+	return match ? Number(match) : undefined;
+}
+
+function decodeHtml(value: string) {
+	return value
+		.replaceAll('&amp;', '&')
+		.replaceAll('&quot;', '"')
+		.replaceAll('&#39;', "'")
+		.replaceAll('&nbsp;', ' ')
+		.replace(/<[^>]*>/g, '')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+function findTitle(html: string) {
+	return (
+		getMeta(html, 'og:title') ??
+		html.match(/<span[^>]+id=["']productTitle["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] ??
+		html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
 	);
 }
 
-async function accessToken(config: AmazonCreatorsConfig, fetcher: typeof fetch) {
-	const tokenEndpoint = tokenEndpoints[config.credentialVersion];
-	if (!tokenEndpoint) {
-		throw new MarketplaceFetchError(
-			'The saved Creators API credential version must be 3.1, 3.2, or 3.3.',
-			503
-		);
+function findPrice(html: string) {
+	const candidates = [
+		getMeta(html, 'product:price:amount'),
+		html.match(
+			/data-a-color=["']price["'][\s\S]{0,500}?<span[^>]+class=["']a-offscreen["'][^>]*>([\s\S]*?)<\/span>/i
+		)?.[1],
+		html.match(/<span[^>]+class=["'][^"']*a-price-whole[^"']*["'][^>]*>([\s\S]*?)<\/span>/i)?.[1],
+		html.match(/"priceAmount"\s*:\s*([0-9]+(?:\.[0-9]+)?)/i)?.[1],
+		html.match(/"price"\s*:\s*"?([0-9,]+(?:\.[0-9]+)?)"?/i)?.[1]
+	];
+	for (const candidate of candidates) {
+		const price = parsePrice(decodeHtml(candidate ?? ''));
+		if (price !== undefined) return price;
 	}
-	const cacheKey = `${config.credentialId}:${config.credentialVersion}`;
-	const cached = tokenCache.get(cacheKey);
-	if (cached && cached.expiresAt > Date.now() + 60_000) return cached.value;
+}
 
-	let response: Response;
-	try {
-		response = await fetcher(tokenEndpoint, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({
-				grant_type: 'client_credentials',
-				client_id: config.credentialId,
-				client_secret: config.credentialSecret,
-				scope: 'creatorsapi::default'
-			}),
-			signal: AbortSignal.timeout(requestTimeoutMs)
-		});
-	} catch {
-		throw new MarketplaceFetchError(
-			'Prizen could not reach the Amazon Creators API authentication service.',
-			502
-		);
-	}
-	if (!response.ok) throw marketplaceError(response.status, 'authenticate with');
-	const payload = (await response.json()) as { access_token?: unknown; expires_in?: unknown };
-	if (typeof payload.access_token !== 'string' || payload.access_token.length === 0) {
-		throw new MarketplaceFetchError(
-			'Amazon Creators API returned an invalid authentication response.',
-			502
-		);
-	}
-	const expiresIn =
-		typeof payload.expires_in === 'number' && payload.expires_in > 0 ? payload.expires_in : 3600;
-	tokenCache.set(cacheKey, {
-		value: payload.access_token,
-		expiresAt: Date.now() + expiresIn * 1000
-	});
-	return payload.access_token;
+function findElementTextById(html: string, id: string) {
+	const escapedId = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const openingTag = new RegExp(`<([a-z][a-z0-9]*)[^>]*\\bid=["']${escapedId}["'][^>]*>`, 'i').exec(
+		html
+	);
+	if (!openingTag || openingTag.index === undefined) return;
+	const contentStart = openingTag.index + openingTag[0].length;
+	const closingTag = new RegExp(`</${openingTag[1]}\\s*>`, 'i').exec(html.slice(contentStart));
+	const contentEnd = closingTag ? contentStart + closingTag.index : contentStart + 2_000;
+	return decodeHtml(html.slice(contentStart, contentEnd));
+}
+
+function findAvailability(html: string, currentPrice: number | undefined) {
+	const unavailable = /currently unavailable|temporarily out of stock|\bout of stock\b/i;
+	const available = /\bin stock\b|available to ship|add to cart|buy now/i;
+	const primaryAvailability = findElementTextById(html, 'availability');
+
+	if (primaryAvailability && available.test(primaryAvailability)) return 'in_stock' as const;
+	if (primaryAvailability && unavailable.test(primaryAvailability)) return 'out_of_stock' as const;
+
+	const explicitOutOfStock = findElementTextById(html, 'outOfStock');
+	if (explicitOutOfStock && unavailable.test(explicitOutOfStock)) return 'out_of_stock' as const;
+
+	const purchaseArea = ['availability_feature_div', 'buybox']
+		.map((id) => findElementTextById(html, id))
+		.filter((value): value is string => Boolean(value))
+		.join(' ');
+	if (available.test(purchaseArea)) return 'in_stock' as const;
+	return currentPrice === undefined ? undefined : ('in_stock' as const);
+}
+
+function canonicalUrl(url: URL) {
+	const asin = url.pathname.match(/\/dp\/([A-Z0-9]{10})(?:\/|$)/i)?.[1];
+	return asin ? new URL(`/dp/${asin}`, url.origin) : url;
 }
 
 export function isAmazonUrl(url: URL) {
 	return url.protocol === 'https:' && allowedHosts.has(url.hostname);
 }
 
+/**
+ * Bounded HTML fallback for personal deployments. It deliberately does not try
+ * to evade Amazon challenge pages; the durable scan queue backs off instead.
+ */
 export async function fetchAmazonSnapshot(
 	input: URL,
 	fetcher: typeof fetch,
-	config: AmazonCreatorsConfig
+	deliveryPincode?: string
 ): Promise<AmazonProductSnapshot> {
-	const asin = productAsin(input);
-	if (!asin) {
-		throw new MarketplaceFetchError(
-			'Use a direct Amazon product URL containing a 10-character ASIN.',
-			422
-		);
-	}
-	const marketplace = marketplaceFor(input);
-	const partnerTag = partnerTagFor(marketplace, config);
-	if (
-		!config.credentialId ||
-		!config.credentialSecret ||
-		!config.credentialVersion ||
-		!partnerTag
-	) {
-		throw new MarketplaceFetchError(
-			`Amazon Creators API is not configured for ${marketplace}.`,
-			503
-		);
-	}
-	const token = await accessToken(config, fetcher);
+	const url = canonicalUrl(input);
 	let response: Response;
 	try {
-		response = await fetcher(creatorsApiUrl, {
-			method: 'POST',
+		response = await fetcher(url, {
 			headers: {
-				'content-type': 'application/json',
-				'x-marketplace': marketplace,
-				authorization: `Bearer ${token}`
+				'user-agent': 'Prizen/1.0 (self-hosted personal price tracker)',
+				'accept-language': 'en-IN,en;q=0.9'
 			},
-			body: JSON.stringify({
-				itemIds: [asin],
-				itemIdType: 'ASIN',
-				marketplace,
-				partnerTag,
-				resources: [
-					'itemInfo.title',
-					'parentASIN',
-					'offersV2.listings.availability',
-					'offersV2.listings.isBuyBoxWinner',
-					'offersV2.listings.merchantInfo',
-					'offersV2.listings.price'
-				]
-			}),
 			signal: AbortSignal.timeout(requestTimeoutMs)
 		});
-	} catch {
-		throw new MarketplaceFetchError('Prizen could not reach Amazon Creators API.', 502);
-	}
-	if (!response.ok) throw marketplaceError(response.status, 'query');
-	const payload = (await response.json()) as CreatorsApiResponse;
-	const item = payload.itemsResult?.items?.find((candidate) => candidate.asin === asin);
-	if (!item) {
-		const reason = payload.errors?.[0]?.message;
+		if (deliveryPincode && url.hostname.endsWith('amazon.in')) {
+			const bootstrapHtml = await response.clone().text();
+			const csrfToken = bootstrapHtml.match(
+				/(?:anti-csrftoken-a2z|csrfToken)["']?\s*(?:value=|:)\s*["']([^"']+)/i
+			)?.[1];
+			const bootstrapCookie = response.headers
+				.get('set-cookie')
+				?.split(/,(?=[^;,]+=)/)
+				.map((cookie) => cookie.split(';', 1)[0])
+				.join('; ');
+			if (!csrfToken) {
+				throw new MarketplaceFetchError('Amazon did not expose delivery-location controls.', 502);
+			}
+			const locationResponse = await fetcher(
+				new URL('/gp/delivery/ajax/address-change.html', url.origin),
+				{
+					method: 'POST',
+					headers: {
+						'user-agent': 'Prizen/1.0 (self-hosted personal price tracker)',
+						'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+						'anti-csrftoken-a2z': csrfToken,
+						'x-requested-with': 'XMLHttpRequest',
+						referer: url.toString(),
+						...(bootstrapCookie ? { cookie: bootstrapCookie } : {})
+					},
+					body: new URLSearchParams({
+						locationType: 'LOCATION_INPUT',
+						zipCode: deliveryPincode,
+						storeContext: 'generic',
+						pageType: 'Detail',
+						actionSource: 'glow'
+					}),
+					signal: AbortSignal.timeout(requestTimeoutMs)
+				}
+			);
+			if (!locationResponse.ok) {
+				throw new MarketplaceFetchError('Amazon rejected the configured delivery pincode.', 502);
+			}
+			const locationCookie = locationResponse.headers
+				.get('set-cookie')
+				?.split(/,(?=[^;,]+=)/)
+				.map((cookie) => cookie.split(';', 1)[0])
+				.join('; ');
+			response = await fetcher(url, {
+				headers: {
+					'user-agent': 'Prizen/1.0 (self-hosted personal price tracker)',
+					'accept-language': 'en-IN,en;q=0.9',
+					cookie: [bootstrapCookie, locationCookie].filter(Boolean).join('; ')
+				},
+				signal: AbortSignal.timeout(requestTimeoutMs)
+			});
+		}
+	} catch (exception) {
+		// Preserve intentional marketplace errors while normalizing network failures.
+		if (exception instanceof MarketplaceFetchError) throw exception;
 		throw new MarketplaceFetchError(
-			reason
-				? `Amazon Creators API rejected this product: ${reason}`
-				: 'Amazon did not return this product.',
+			'Prizen could not reach this product page. Try again shortly.',
 			502
 		);
 	}
-	const title = item.itemInfo?.title?.displayValue?.trim();
-	const listing =
-		item.offersV2?.listings?.find((candidate) => candidate.isBuyBoxWinner) ??
-		item.offersV2?.listings?.[0];
-	const price = listing?.price?.money?.amount;
-	const currency = listing?.price?.money?.currency;
-	if (!title || (price !== undefined && (!Number.isFinite(price) || price <= 0))) {
-		throw new MarketplaceFetchError('Amazon returned invalid product or offer data.', 502);
+	if (!response.ok || !isAmazonUrl(new URL(response.url))) {
+		throw new MarketplaceFetchError('Amazon did not return a product page for this link.', 502);
 	}
-	if (price !== undefined && (!currency || !/^[A-Z]{3}$/.test(currency))) {
-		throw new MarketplaceFetchError('Amazon returned an invalid offer currency.', 502);
+	const html = await response.text();
+	if (/captcha|robot check|enter the characters you see below/i.test(html)) {
+		throw new MarketplaceFetchError(
+			'Amazon temporarily rate-limited this tracker. Prizen will retry later.',
+			429
+		);
+	}
+	const title = findTitle(html);
+	const currentPrice = findPrice(html);
+	const availability = findAvailability(html, currentPrice);
+	if (!title || availability === undefined) {
+		throw new MarketplaceFetchError(
+			'Prizen could not read a product name and price from this page.',
+			502
+		);
 	}
 	return {
-		asin,
-		parentAsin: item.parentASIN ?? null,
-		variantId: asin,
-		title,
-		url: item.detailPageURL ?? new URL(`/dp/${asin}`, input.origin).toString(),
-		currentPrice: price ?? null,
-		currency: currency ?? (marketplace === 'www.amazon.in' ? 'INR' : 'USD'),
-		availability: normalizedAvailability(listing?.availability?.type),
-		sellerId: listing?.merchantInfo?.id ?? null,
-		sellerName: listing?.merchantInfo?.name ?? null,
-		deliveryContext: 'marketplace_default'
+		title: decodeHtml(title),
+		url: response.url,
+		currentPrice: currentPrice ?? null,
+		currency: getMeta(html, 'product:price:currency') ?? 'INR',
+		availability
 	};
 }

@@ -15,7 +15,6 @@ type DueProduct = {
 	attempts: number;
 	target_price: string | null;
 	delivery_pincode: string | null;
-	user_id: string;
 };
 type PendingNotification = {
 	id: string;
@@ -119,7 +118,7 @@ async function scanDueProducts() {
 	await sql`update scan_jobs set status = 'pending', run_at = now(), locked_at = null, updated_at = now() where status = 'running' and locked_at < now() - interval '5 minutes'`;
 	const due = await sql<DueProduct[]>`with due as (
 		select job.id as job_id, product.id, product.url, product.polling_interval_seconds, job.attempts,
-			product.target_price, product.user_id, settings.delivery_pincode
+			product.target_price, settings.delivery_pincode
 		from scan_jobs job
 		join products product on product.id = job.product_id
 		left join user_settings settings on settings.user_id = product.user_id
@@ -130,7 +129,7 @@ async function scanDueProducts() {
 	)
 	update scan_jobs job set status = 'running', locked_at = now(), updated_at = now()
 	from due where job.id = due.job_id
-	returning due.job_id, due.id, due.url, due.polling_interval_seconds, due.attempts, due.target_price, due.user_id`;
+	returning due.job_id, due.id, due.url, due.polling_interval_seconds, due.attempts, due.target_price`;
 	for (const product of due) {
 		try {
 			const response = await fetch(`${appUrl}/api/products/preview`, {
@@ -139,7 +138,7 @@ async function scanDueProducts() {
 					'content-type': 'application/json',
 					authorization: `Bearer ${process.env.TRACKER_TOKEN ?? ''}`
 				},
-				body: JSON.stringify({ url: product.url, userId: product.user_id })
+				body: JSON.stringify({ url: product.url, deliveryPincode: product.delivery_pincode })
 			});
 			if (!response.ok) throw new Error(`preview returned ${response.status}`);
 			const data = (await response.json()) as {

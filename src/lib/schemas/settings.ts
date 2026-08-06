@@ -23,30 +23,3 @@ export const notificationChannelSchema = z
 			});
 		}
 	});
-
-export const amazonMarketplaceSettingsSchema = z
-	.object({
-		dataSource: z.enum(['html', 'creators']),
-		credentialId: z.string().trim().max(512).optional(),
-		credentialSecret: z.string().trim().max(2048).optional(),
-		credentialVersion: z.enum(['3.1', '3.2', '3.3']).optional(),
-		partnerTagIndia: z.string().trim().max(128).optional(),
-		partnerTagUnitedStates: z.string().trim().max(128).optional()
-	})
-	.superRefine((value, context) => {
-		const credentialValues = [
-			value.credentialId,
-			value.credentialSecret,
-			value.credentialVersion,
-			value.partnerTagIndia,
-			value.partnerTagUnitedStates
-		];
-		const supplied = credentialValues.filter(Boolean).length;
-		if (supplied > 0 && supplied < 4) {
-			context.addIssue({
-				code: 'custom',
-				message:
-					'Enter the credential ID, secret, version, and at least one marketplace partner tag.'
-			});
-		}
-	});

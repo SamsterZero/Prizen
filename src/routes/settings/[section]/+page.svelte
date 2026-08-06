@@ -41,16 +41,6 @@
 	let deliveryPincode = $state('');
 	let savingPincode = $state(false);
 	let pincodeMessage = $state('');
-	let amazonDataSource = $state<'html' | 'creators'>('html');
-	let creatorsConfigured = $state(false);
-	let creatorsCredentialId = $state('');
-	let creatorsCredentialSecret = $state('');
-	let creatorsCredentialVersion = $state<'3.1' | '3.2' | '3.3'>('3.2');
-	let creatorsPartnerTagIndia = $state('');
-	let creatorsPartnerTagUnitedStates = $state('');
-	let savingMarketplace = $state(false);
-	let marketplaceMessage = $state('');
-	let marketplaceError = $state(false);
 
 	async function loadChannels() {
 		loading = true;
@@ -74,89 +64,10 @@
 		}
 	}
 
-	async function loadMarketplaceSettings() {
-		try {
-			const response = await fetch('/api/settings/marketplaces/amazon');
-			if (!response.ok) throw new Error('Could not load Amazon settings.');
-			const settings = (await response.json()) as {
-				dataSource: 'html' | 'creators';
-				creatorsConfigured: boolean;
-				credentialVersion: typeof creatorsCredentialVersion | null;
-			};
-			amazonDataSource = settings.dataSource;
-			creatorsConfigured = settings.creatorsConfigured;
-			if (settings.credentialVersion) creatorsCredentialVersion = settings.credentialVersion;
-		} catch (exception) {
-			marketplaceError = true;
-			marketplaceMessage =
-				exception instanceof Error ? exception.message : 'Could not load Amazon settings.';
-		}
-	}
-
 	$effect(() => {
 		if (activeSection === 'notifications') void loadChannels();
 		if (activeSection === 'delivery') void loadSettings();
-		if (activeSection === 'marketplaces') void loadMarketplaceSettings();
 	});
-
-	async function saveAmazonSettings() {
-		if (savingMarketplace) return;
-		savingMarketplace = true;
-		marketplaceMessage = '';
-		marketplaceError = false;
-		try {
-			const response = await fetch('/api/settings/marketplaces/amazon', {
-				method: 'PATCH',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					dataSource: amazonDataSource,
-					credentialId: creatorsCredentialId || undefined,
-					credentialSecret: creatorsCredentialSecret || undefined,
-					credentialVersion:
-						creatorsCredentialId || creatorsCredentialSecret
-							? creatorsCredentialVersion
-							: undefined,
-					partnerTagIndia: creatorsPartnerTagIndia || undefined,
-					partnerTagUnitedStates: creatorsPartnerTagUnitedStates || undefined
-				})
-			});
-			const data = (await response.json()) as {
-				dataSource?: 'html' | 'creators';
-				creatorsConfigured?: boolean;
-				message?: string;
-			};
-			if (!response.ok) throw new Error(data.message ?? 'Could not save Amazon settings.');
-			amazonDataSource = data.dataSource ?? amazonDataSource;
-			creatorsConfigured = data.creatorsConfigured ?? creatorsConfigured;
-			creatorsCredentialId = '';
-			creatorsCredentialSecret = '';
-			creatorsPartnerTagIndia = '';
-			creatorsPartnerTagUnitedStates = '';
-			marketplaceMessage = 'Amazon settings saved.';
-			toast.success(marketplaceMessage);
-		} catch (exception) {
-			marketplaceError = true;
-			marketplaceMessage =
-				exception instanceof Error ? exception.message : 'Could not save Amazon settings.';
-			toast.error(marketplaceMessage);
-		} finally {
-			savingMarketplace = false;
-		}
-	}
-
-	async function removeCreatorsCredentials() {
-		const response = await fetch('/api/settings/marketplaces/amazon', { method: 'DELETE' });
-		if (!response.ok && response.status !== 404) {
-			marketplaceError = true;
-			marketplaceMessage = 'Could not remove Amazon credentials.';
-			return;
-		}
-		amazonDataSource = 'html';
-		creatorsConfigured = false;
-		marketplaceError = false;
-		marketplaceMessage = 'Amazon Creators API credentials removed.';
-		toast.success(marketplaceMessage);
-	}
 
 	async function savePincode() {
 		savingPincode = true;
@@ -310,130 +221,6 @@
 							<h2 class="text-lg font-black">Marketplace accounts</h2>
 							<p class="mt-1 text-sm text-slate-500">Manage the stores Prizen can assist with.</p>
 						</div>
-						<form
-							class="border-b border-slate-100 p-5 sm:p-6"
-							onsubmit={(event) => {
-								event.preventDefault();
-								saveAmazonSettings();
-							}}
-						>
-							<div class="flex items-start gap-3">
-								<span class="rounded-xl bg-orange-100 p-2.5 text-orange-700">
-									<ShoppingBag aria-hidden="true" size={20} />
-								</span>
-								<div>
-									<h3 class="font-bold">Amazon product data</h3>
-									<p class="mt-1 max-w-2xl text-sm text-slate-500">
-										HTML works without an affiliate account. Eligible Amazon Associates can use the
-										official Creators API instead.
-									</p>
-								</div>
-							</div>
-
-							<label class="mt-5 block max-w-md text-sm font-semibold">
-								Data source
-								<select
-									class="mt-2 w-full rounded-xl border-slate-300"
-									bind:value={amazonDataSource}
-								>
-									<option value="html">Product page HTML (default)</option>
-									<option value="creators">Amazon Creators API</option>
-								</select>
-							</label>
-
-							{#if amazonDataSource === 'creators'}
-								<div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-									<div class="flex flex-wrap items-center justify-between gap-2">
-										<div>
-											<h4 class="text-sm font-bold">Creators API credentials</h4>
-											<p class="mt-1 text-xs text-slate-500">
-												{creatorsConfigured
-													? 'Encrypted credentials are configured. Leave all secret fields blank to keep them.'
-													: 'All values are encrypted before they are stored.'}
-											</p>
-										</div>
-										{#if creatorsConfigured}
-											<span
-												class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700"
-											>
-												<CircleCheck aria-hidden="true" size={12} />Configured
-											</span>
-										{/if}
-									</div>
-									<div class="mt-4 grid gap-4 sm:grid-cols-2">
-										<label class="text-sm font-semibold">
-											Credential ID
-											<input
-												class="mt-2 w-full rounded-xl border-slate-300"
-												bind:value={creatorsCredentialId}
-												autocomplete="off"
-												placeholder={creatorsConfigured ? 'Stored securely' : 'Credential ID'}
-											/>
-										</label>
-										<label class="text-sm font-semibold">
-											Credential secret
-											<input
-												class="mt-2 w-full rounded-xl border-slate-300"
-												bind:value={creatorsCredentialSecret}
-												autocomplete="new-password"
-												placeholder={creatorsConfigured ? 'Stored securely' : 'Credential secret'}
-												type="password"
-											/>
-										</label>
-										<label class="text-sm font-semibold">
-											Credential version
-											<select
-												class="mt-2 w-full rounded-xl border-slate-300"
-												bind:value={creatorsCredentialVersion}
-											>
-												<option value="3.1">3.1</option><option value="3.2">3.2</option><option
-													value="3.3">3.3</option
-												>
-											</select>
-										</label>
-										<label class="text-sm font-semibold">
-											Amazon India partner tag
-											<input
-												class="mt-2 w-full rounded-xl border-slate-300"
-												bind:value={creatorsPartnerTagIndia}
-												placeholder={creatorsConfigured ? 'Leave blank to keep' : 'example-21'}
-											/>
-										</label>
-									</div>
-									<label class="mt-4 block text-sm font-semibold sm:max-w-[calc(50%-0.5rem)]">
-										Amazon US partner tag
-										<input
-											class="mt-2 w-full rounded-xl border-slate-300"
-											bind:value={creatorsPartnerTagUnitedStates}
-											placeholder={creatorsConfigured ? 'Leave blank to keep' : 'example-20'}
-										/>
-									</label>
-								</div>
-							{/if}
-
-							<div class="mt-5 flex flex-wrap gap-3">
-								<Button
-									class="h-10 bg-indigo-600 px-4 text-white hover:bg-indigo-700"
-									disabled={savingMarketplace}
-								>
-									{savingMarketplace ? 'Saving…' : 'Save Amazon settings'}
-								</Button>
-								{#if creatorsConfigured}
-									<Button type="button" variant="outline" onclick={removeCreatorsCredentials}>
-										Remove API credentials
-									</Button>
-								{/if}
-							</div>
-							{#if marketplaceMessage}
-								<p
-									class="mt-4 text-sm font-semibold {marketplaceError
-										? 'text-rose-700'
-										: 'text-emerald-700'}"
-								>
-									{marketplaceMessage}
-								</p>
-							{/if}
-						</form>
 						<div class="flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center sm:p-6">
 							<div class="flex items-start gap-3">
 								<span class="rounded-xl bg-violet-100 p-2.5 text-violet-700">
@@ -462,7 +249,7 @@
 						<div class="border-b border-slate-100 px-5 py-4 sm:px-6">
 							<h2 class="text-lg font-black">Delivery location</h2>
 							<p class="mt-1 text-sm text-slate-500">
-								Saved locally for marketplace adapters that support destination-aware checks.
+								Used to check whether products can be delivered to you.
 							</p>
 						</div>
 						<div class="p-5 sm:p-6">
@@ -473,8 +260,7 @@
 								<div>
 									<h3 class="font-bold">Amazon India</h3>
 									<p class="mt-1 text-sm text-slate-500">
-										Current Amazon tracking reports page or marketplace-default availability. This
-										pincode stays local and is not sent by either mode.
+										Availability checks use this pincode to match Amazon's delivery location.
 									</p>
 								</div>
 							</div>
