@@ -60,7 +60,12 @@ jobs:
         run: bun run check
 
       - name: Run unit tests
-        run: bun test
+        run: bun run test
+
+      - name: Run database integration tests
+        env:
+          ALLOW_INTEGRATION_DB_RESET: 'true'
+        run: bun run test:integration
 
       - name: Build application
         run: bun run build
