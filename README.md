@@ -38,3 +38,11 @@ The database stores all local data in the `pgdata` volume. Compose ports bind to
 ## Documentation
 
 The complete product and engineering specification is in [docs](docs): vision, architecture, modules, database, business rules, API, workflows, UI, repository conventions, AI development policy, and roadmap.
+
+- [Project guide](PROJECT.md) explains milestones, planning fields, and the definition of done.
+- [Contributing guide](CONTRIBUTING.md) covers setup, validation, pull requests, and architectural requirements.
+- [GitHub Roadmap](https://github.com/users/SamsterZero/projects/4) tracks actionable work.
+
+## License
+
+Prizen is licensed under the [Apache License 2.0](LICENSE).

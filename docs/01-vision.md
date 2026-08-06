@@ -184,7 +184,7 @@ Monitor hardware, gaming, and electronics deals across multiple marketplaces.
 
 ## Developers
 
-Contribute to an open, well-documented, modular codebase.
+Contribute to an open, well-documented, modular codebase licensed under the Apache License 2.0.
 
 ---
 

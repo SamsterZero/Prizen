@@ -30,9 +30,12 @@ Core features may make transparent, purpose-specific requests to:
 - Discord or Telegram, only when the owner configures those integrations
 - An SMTP server configured by the owner
 - An error-reporting endpoint configured and explicitly enabled by the owner
+- Google AdSense endpoints on public pages, only when advertising is explicitly configured and enabled by the owner
 
 These connections do not transfer ownership to Prizen. Optional telemetry is
-disabled by default and may point to a self-hosted endpoint.
+disabled by default and may point to a self-hosted endpoint. Advertising is
+also disabled by default, must not load on private routes, and must not be
+required for tracking or administration.
 
 ## Purchase assistance
 
