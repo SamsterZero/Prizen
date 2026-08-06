@@ -1,0 +1,66 @@
+name: Feature request
+description: Propose an improvement to Prizen
+title: '[Feature]: '
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is difficult today, and who experiences it?
+      placeholder: Describe the need with a concrete example.
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Proposed outcome
+      description: Describe the result you want. Implementation details are optional.
+    validations:
+      required: true
+
+  - type: textarea
+    id: data
+    attributes:
+      label: Stored data
+      description: What new data would be stored, where, and how could the owner export or delete it?
+      placeholder: None, or describe the complete data lifecycle.
+    validations:
+      required: true
+
+  - type: textarea
+    id: network
+    attributes:
+      label: Outbound connections
+      description: Which external endpoint would be contacted, why, and how could the owner disable it?
+      placeholder: None, or describe the endpoint, purpose, and opt-out.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] First observable result
+        - [ ] Second observable result
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives and additional context
+      description: Add workarounds, alternatives, mockups, references, or related issues.
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Project constraints
+      options:
+        - label: This proposal keeps Prizen containerized and self-hosted.
+          required: true
+        - label: This proposal does not require a Prizen-operated cloud service.
+          required: true

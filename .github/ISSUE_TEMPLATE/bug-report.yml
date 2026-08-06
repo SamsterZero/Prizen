@@ -1,0 +1,89 @@
+name: Bug report
+description: Report reproducible broken or unexpected behavior
+title: '[Bug]: '
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove secrets, tokens, cookies, webhook URLs, database URLs, and personal data before submitting.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and its impact.
+      placeholder: Tell us what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide the smallest reliable sequence that triggers the problem.
+      placeholder: |
+        1. Start Prizen with ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened instead?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Prizen version or commit
+      placeholder: v0.1.0 or abc1234
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Installation method
+      options:
+        - Podman Compose
+        - Docker Compose
+        - Local development
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: host
+    attributes:
+      label: Host environment
+      description: Include operating system and CPU architecture.
+      placeholder: Ubuntu 24.04, x86_64
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs or screenshots
+      description: Include only the smallest useful excerpt and redact all sensitive values.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include frequency, browser, marketplace, notification channel, recent upgrade, or workaround when relevant.
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed credentials, tokens, cookies, personal data, and other secrets from this report.
+          required: true

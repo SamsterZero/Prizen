@@ -63,5 +63,8 @@ Work is complete when:
 - [Business Logic](docs/05-business-logic.md)
 - [API Contract](docs/06-api/openapi.yaml)
 - [Purchase Assist](docs/12-purchase-assist.md)
+- [Security Policy](SECURITY.md)
+- [Release Guide](docs/14-releasing.md)
+- [Changelog](CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
 - [Open issues](https://github.com/SamsterZero/Prizen/issues)
