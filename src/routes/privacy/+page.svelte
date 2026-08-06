@@ -56,9 +56,11 @@
 				<section>
 					<h2 class="text-xl font-black text-slate-950">External requests</h2>
 					<p class="mt-2">
-						To perform its functions, Prizen requests product pages from supported marketplaces and
-						may send test messages and alerts through Discord or Telegram. Those services receive
-						the information necessary to fulfil each request and apply their own privacy terms.
+						To perform its functions, Prizen requests product pages or, when explicitly configured,
+						approved product and offer data through supported marketplace APIs. It may also send
+						test messages and alerts through Discord or Telegram. Those services receive the
+						information necessary to fulfil each request and apply their own privacy terms. Delivery
+						pincodes are not sent by either Amazon tracking mode.
 					</p>
 				</section>
 				<section>

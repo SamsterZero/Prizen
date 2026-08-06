@@ -66,6 +66,28 @@ export const marketplaces = pgTable('marketplaces', {
 	updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
 });
 
+/** Per-owner marketplace access settings; provider secrets are encrypted as one bundle. */
+export const marketplaceConfigurations = pgTable(
+	'marketplace_configurations',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		marketplaceSlug: varchar('marketplace_slug', { length: 64 }).notNull(),
+		dataSource: varchar('data_source', { length: 24 }).notNull().default('html'),
+		secretReference: text('secret_reference'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [
+		uniqueIndex('marketplace_configurations_user_slug_unique').on(
+			table.userId,
+			table.marketplaceSlug
+		)
+	]
+);
+
 /** Product metadata is owned by the product module. */
 export const products = pgTable(
 	'products',
