@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: Prizen API
+  version: 0.1.0
+  description: Internal REST contract for the initial price-tracking MVP.
+servers:
+  - url: /api
+paths:
+  /products:
+    post:
+      summary: Start tracking a marketplace product
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url: { type: string, format: uri }
+                targetPrice: { type: number, minimum: 0 }
+      responses:
+        '202': { description: Product accepted and first scan queued }
+        '400': { description: Invalid URL or price }
+        '422': { description: Unsupported marketplace }
+  /watchlists:
+    get:
+      summary: List the caller's tracked products
+      responses:
+        '200': { description: Watchlist summary }
+  /watchlists/{watchlistId}:
+    patch:
+      summary: Update a target price or pause state
+      parameters:
+        - $ref: '#/components/parameters/WatchlistId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetPrice: { type: number, minimum: 0 }
+                isPaused: { type: boolean }
+      responses:
+        '200': { description: Watchlist updated }
+    delete:
+      summary: Stop tracking a product for the caller
+      parameters:
+        - $ref: '#/components/parameters/WatchlistId'
+      responses:
+        '204': { description: Watchlist removed }
+  /products/{productId}/price-history:
+    get:
+      summary: Read normalized price observations for a time range
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+      responses:
+        '200': { description: Price observations }
+components:
+  parameters:
+    ProductId: { name: productId, in: path, required: true, schema: { type: string, format: uuid } }
+    WatchlistId:
+      { name: watchlistId, in: path, required: true, schema: { type: string, format: uuid } }

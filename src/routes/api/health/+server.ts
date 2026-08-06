@@ -1,0 +1,8 @@
+import { json } from '@sveltejs/kit';
+import { sql } from 'drizzle-orm';
+import { db } from '$lib/server/db';
+
+export async function GET() {
+	await db.execute(sql`select 1`);
+	return json({ status: 'ok' });
+}

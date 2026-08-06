@@ -1,0 +1,179 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+@import 'tw-animate-css';
+@custom-variant dark (&:is([data-theme='dark'] *));
+
+@theme inline {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-destructive: var(--destructive);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-chart-1: var(--chart-1);
+	--radius-md: var(--radius);
+}
+
+:root {
+	font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+	color: #0f172a;
+	background: #f8f9ff;
+	--background: #ffffff;
+	--foreground: #0f172a;
+	--primary: #4f46e5;
+	--primary-foreground: #ffffff;
+	--secondary: #eef2ff;
+	--secondary-foreground: #312e81;
+	--muted: #f1f5f9;
+	--muted-foreground: #64748b;
+	--destructive: #e11d48;
+	--border: #cbd5e1;
+	--input: #cbd5e1;
+	--ring: #6366f1;
+	--radius: 0.75rem;
+	--chart-1: #4f46e5;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	background: #070708;
+	--background: #070708;
+	--foreground: #f5f3ff;
+	--primary: #7c3aed;
+	--primary-foreground: #ffffff;
+	--secondary: #18181c;
+	--secondary-foreground: #f5f3ff;
+	--muted: #18181c;
+	--muted-foreground: #a1a1aa;
+	--destructive: #f43f5e;
+	--border: #27272d;
+	--input: #1f1f24;
+	--ring: #8b5cf6;
+	--chart-1: #8b5cf6;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+/* Keeps a usable gutter while allowing every page to use the full viewport on ultrawide screens. */
+.page-shell {
+	width: 100%;
+	padding-inline: clamp(1.5rem, 4vw, 6rem);
+}
+
+.product-title {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+	overflow: hidden;
+}
+
+.price-chart-line {
+	fill: none;
+	stroke: #4f46e5;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	stroke-width: 3;
+}
+
+.price-chart-grid {
+	stroke: #cbd5e1;
+	stroke-width: 1;
+}
+
+.chart-range-active {
+	background: #e0e7ff;
+	color: #4338ca;
+}
+
+:root[data-theme='dark'] .price-chart-grid {
+	stroke: #475569;
+}
+
+:root[data-theme='dark'] .chart-range-active {
+	background: #312e81;
+	color: #e0e7ff;
+}
+
+.theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.75rem;
+	background: #fff;
+	padding: 0.625rem;
+	color: #334155;
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.25rem;
+	cursor: pointer;
+}
+
+.theme-toggle:hover {
+	border-color: #94a3b8;
+}
+
+:root[data-theme='dark'] .theme-toggle {
+	border-color: #334155;
+	background: #172033;
+	color: #e2e8f0;
+}
+
+:root[data-theme='dark'] .app-surface {
+	background: #070708 !important;
+	color: #f5f3ff !important;
+}
+
+:root[data-theme='dark'] .app-surface .bg-white {
+	background-color: #0e0e11 !important;
+}
+
+:root[data-theme='dark'] .app-surface .bg-slate-50,
+:root[data-theme='dark'] .app-surface .bg-slate-100 {
+	background-color: #131316 !important;
+}
+
+:root[data-theme='dark'] .app-surface .bg-transparent {
+	background-color: transparent !important;
+}
+
+:root[data-theme='dark'] .app-surface .border-slate-200,
+:root[data-theme='dark'] .app-surface .border-slate-300,
+:root[data-theme='dark'] .app-surface .border-slate-100 {
+	border-color: #27272d !important;
+}
+
+:root[data-theme='dark'] .app-surface .text-slate-950 {
+	color: #f5f3ff !important;
+}
+
+:root[data-theme='dark'] .app-surface .text-slate-700,
+:root[data-theme='dark'] .app-surface .text-slate-600,
+:root[data-theme='dark'] .app-surface .text-slate-500,
+:root[data-theme='dark'] .app-surface .text-slate-400 {
+	color: #a1a1aa !important;
+}
+
+:root[data-theme='dark'] .app-surface select,
+:root[data-theme='dark'] .app-surface input {
+	border-color: #1f1f24;
+	background: #131316;
+	color: #f5f3ff;
+}
+
+:root[data-theme='dark'] .dashboard-nav {
+	background: #0a0a0c !important;
+}
+
+button,
+a {
+	-webkit-tap-highlight-color: transparent;
+}

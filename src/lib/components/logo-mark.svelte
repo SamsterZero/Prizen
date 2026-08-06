@@ -1,0 +1,15 @@
+<svg
+	class="size-8 shrink-0"
+	viewBox="0 0 64 64"
+	fill="none"
+	xmlns="http://www.w3.org/2000/svg"
+	aria-hidden="true"
+>
+	<rect width="64" height="64" rx="16" fill="#4F46E5" />
+	<path
+		fill-rule="evenodd"
+		clip-rule="evenodd"
+		d="M18 13h17c10.7 0 17 5.1 17 13.5S45.7 40 35 40h-7v11H18V13Zm10 8v11h7c4.7 0 7-1.8 7-5.5S39.7 21 35 21h-7Z"
+		fill="white"
+	/>
+</svg>
