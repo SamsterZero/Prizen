@@ -10,7 +10,7 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 - [x] Tracker health checks, retry loop, and structured logs
 - [x] Public About and local-first Privacy Policy pages
 
-## v0.1 — Tracking MVP Completion
+## v0.1.0 — Tracking MVP Completion
 
 - [ ] Amazon adapter with compliant data access
 - [x] Product intake endpoint and first scan
@@ -23,21 +23,21 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 - [ ] End-to-end tracking and notification coverage
 - [ ] Reproducible containerized release acceptance checklist
 
-## v0.2 — Self-Hosted Operations
+## v0.2.0 — Self-Hosted Operations
 
 - [ ] Replace production `db:push` with deterministic migrations
 - [ ] Harden Compose and reverse-proxy configuration
 - [ ] Test backup, restore, upgrade, and rollback procedures
 - [ ] Document resource guidance and disaster recovery
 
-## v0.3 — Intelligence & Marketplace Expansion
+## v0.3.0 — Intelligence & Marketplace Expansion
 
 - [ ] Trend analytics and filtering
 - [ ] Second compliant marketplace adapter
 - [ ] Local operations dashboard
 - [ ] Retention and storage visibility
 
-## v1.0 — Production Readiness & AdSense
+## v1.0.0 — Production Readiness & AdSense
 
 - [ ] CI gates for formatting, linting, type checks, tests, and container health
 - [ ] Dependency, container-image, accessibility, and performance review
@@ -49,7 +49,7 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 
 AdSense is a release gate only when advertising is enabled for the production distribution. It must never be required for core tracking, administration, or self-hosted operation.
 
-## v1.x — Optional Local Buy Assist
+## v1.1.0 — Optional Local Buy Assist
 
 - [x] Marketplace-neutral purchase policy and final-price safety evaluation
 - [ ] Browser-extension pairing with revocable, scoped device credentials
