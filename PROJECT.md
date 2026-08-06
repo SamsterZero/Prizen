@@ -19,13 +19,13 @@ See [Self-Hosting and Data Ownership](docs/13-self-hosting-and-data-ownership.md
 
 Work is tracked in the [Prizen Roadmap](https://github.com/users/SamsterZero/projects/4). GitHub issues are the source of truth for actionable work; milestones describe release outcomes.
 
-| Milestone                                     | Outcome                                                                         |
-| --------------------------------------------- | ------------------------------------------------------------------------------- |
-| `v0.1 — Tracking MVP Completion`              | Trustworthy, compliant price tracking and notifications                         |
-| `v0.2 — Self-Hosted Operations`               | Safe installation, migration, backup, restore, and upgrade workflows            |
-| `v0.3 — Intelligence & Marketplace Expansion` | Local analytics, operational visibility, and another marketplace adapter        |
-| `v1.0 — Production Readiness & AdSense`       | Production release gates and optional, privacy-reviewed public-page advertising |
-| `v1.x — Optional Local Buy Assist`            | Local browser-assisted checkout and guarded experimental auto-buy               |
+| Milestone                                       | Outcome                                                                         |
+| ----------------------------------------------- | ------------------------------------------------------------------------------- |
+| `v0.1.0 — Tracking MVP Completion`              | Trustworthy, compliant price tracking and notifications                         |
+| `v0.2.0 — Self-Hosted Operations`               | Safe installation, migration, backup, restore, and upgrade workflows            |
+| `v0.3.0 — Intelligence & Marketplace Expansion` | Local analytics, operational visibility, and another marketplace adapter        |
+| `v1.0.0 — Production Readiness & AdSense`       | Production release gates and optional, privacy-reviewed public-page advertising |
+| `v1.1.0 — Optional Local Buy Assist`            | Local browser-assisted checkout and guarded experimental auto-buy               |
 
 The detailed product sequence is maintained in [docs/11-roadmap.md](docs/11-roadmap.md).
 
