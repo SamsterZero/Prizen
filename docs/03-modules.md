@@ -154,7 +154,8 @@ Marketplace-specific implementations belong here.
 
 ## Supported
 
-- Amazon
+- Amazon India and Amazon US through bounded HTML retrieval by default
+- Optional Amazon Creators API for eligible installation owners
 
 Future:
 
