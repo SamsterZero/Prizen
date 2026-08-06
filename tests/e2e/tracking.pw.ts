@@ -25,6 +25,8 @@ test('previews and persists a tracked product through the dashboard', async ({ p
 	expect(response.ok()).toBe(true);
 	const products = (await response.json()) as Array<{ title: string; url: string }>;
 	expect(products).toEqual(
-		expect.arrayContaining([{ title: 'Playwright tracked product', url: productUrl }])
+		expect.arrayContaining([
+			expect.objectContaining({ title: 'Playwright tracked product', url: productUrl })
+		])
 	);
 });
