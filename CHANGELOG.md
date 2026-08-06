@@ -14,5 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Project governance, security policy, CI, and release automation
 - Optional Amazon catalog and offer tracking through the owner-configured Creators API
 - End-to-end coverage for product intake, scan persistence, notification delivery, and retries
+- Reproducible Tracking MVP release acceptance and recovery checks
+- One-command production Compose deployment with persistent generated secrets and explicit migrations
 
 [Unreleased]: https://github.com/SamsterZero/Prizen/commits/main

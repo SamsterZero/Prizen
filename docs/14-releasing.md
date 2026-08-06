@@ -26,8 +26,9 @@ Pre-release tags such as `v1.0.0-rc.1` may be used for release candidates but ar
    git push origin v1.0.0
    ```
 
-7. Verify the GitHub Release, GHCR image tags, SBOM, and provenance attestation.
-8. Test a fresh self-hosted installation using the published image before announcing the release.
+7. Verify the GitHub Release, GHCR image and Compose application, SBOM, and provenance attestation.
+8. Complete the [Tracking MVP release acceptance procedure](16-tracking-mvp-acceptance.md) using
+   the published image before announcing the release.
 
 ## Published image
 
@@ -40,6 +41,20 @@ ghcr.io/samsterzero/prizen:latest
 ```
 
 The `latest` tag is published only for stable versions.
+
+The workflow also publishes `compose.release.yaml` as a GitHub Release asset and an OCI Compose
+application at `ghcr.io/samsterzero/prizen-stack:<version>`. The Compose application pins the
+Prizen image by digest, generates persistent installation secrets on first start, runs migrations
+once, and then starts the app and tracker.
+
+Install with Docker Compose 2.34 or newer:
+
+```sh
+docker compose -f oci://ghcr.io/samsterzero/prizen-stack:1.0.0 up -d --wait
+```
+
+Podman users should download the release's `compose.release.yaml` asset and run
+`podman compose -f compose.release.yaml up -d`. Back up both named volumes before upgrading.
 
 Verify provenance with GitHub CLI:
 
