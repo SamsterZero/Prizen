@@ -23,19 +23,45 @@ Replace `SECRET_ENCRYPTION_KEY` and `TRACKER_TOKEN` in `.env` with separate rand
 
 Amazon tracking defaults to bounded retail-page retrieval. This unofficial mode can break when Amazon changes its pages and may be restricted by marketplace terms. Eligible installation owners can select Creators API in Marketplace settings and save their credentials and partner tags as encrypted local data. See [Amazon data access](docs/15-amazon-creators-api.md) for the trade-offs, configuration, limitations, and throttling behavior.
 
-For the full self-hosted stack, use Podman Compose:
+## Install the released stack
+
+A release runs the web app, tracker, PostgreSQL, and a one-shot migration as a single Compose
+application. Runtime secrets are generated on first start and retained in the `prizen_secrets`
+volume, so upgrades keep encrypted credentials readable.
+
+With Docker Compose 2.34 or newer, install the published Compose application in one command:
+
+```sh
+docker compose -f oci://ghcr.io/samsterzero/prizen-stack:0.1.0 up -d --wait
+```
+
+Podman users can download `compose.release.yaml` from the matching GitHub Release and run:
+
+```sh
+podman compose -f compose.release.yaml up -d
+```
+
+The application listens only on `http://127.0.0.1:3000`; PostgreSQL is not published to the
+host. Back up both `pgdata` and `prizen_secrets`. Losing `prizen_secrets` makes encrypted channel
+and Creators API credentials unrecoverable.
+
+Set `PRIZEN_PORT` before the command to use a host port other than 3000.
+
+For a source checkout and locally built image, use Podman Compose:
 
 ```sh
 export SECRET_ENCRYPTION_KEY="$(openssl rand -hex 32)"
 export TRACKER_TOKEN="$(openssl rand -hex 32)"
-podman compose run --rm app bun run db:migrate
 podman compose up -d --build app tracker
 podman compose ps
 ```
 
 For an existing early-MVP volume, run `podman compose run --rm app bun run db:push:container` once instead of `db:migrate`, then start the upgraded services. Prizen reuses the oldest existing owner record so previously tracked products and channels remain available.
 
-The database stores all local data in the `pgdata` volume. Compose ports bind to `127.0.0.1` because local mode intentionally has no application login. `app`, `db`, and `tracker` report health through Compose; inspect tracker output with `podman logs --tail 100 prizen-tracker-1`.
+The local Compose stack applies migrations automatically before starting the app and tracker. The
+database stores all local data in the `pgdata` volume. Compose ports bind to `127.0.0.1` because
+local mode intentionally has no application login. Inspect tracker output with
+`podman logs --tail 100 prizen-tracker-1`.
 
 ## Documentation
 
@@ -46,6 +72,7 @@ The complete product and engineering specification is in [docs](docs): vision, a
 - [Security policy](SECURITY.md) explains private vulnerability reporting and supported versions.
 - [Release guide](docs/14-releasing.md) documents versioning, GHCR images, provenance, and rollback.
 - [Amazon data access](docs/15-amazon-creators-api.md) documents the default and optional tracking modes.
+- [Tracking MVP acceptance](docs/16-tracking-mvp-acceptance.md) defines reproducible release gates.
 - [Changelog](CHANGELOG.md) records notable changes by release.
 - [GitHub Roadmap](https://github.com/users/SamsterZero/projects/4) tracks actionable work.
 

@@ -1,4 +1,15 @@
 services:
+  migrate:
+    image: prizen:local
+    pull_policy: never
+    build: .
+    command: bun run db:migrate
+    environment:
+      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
+    depends_on:
+      db:
+        condition: service_healthy
+
   app:
     image: prizen:local
     pull_policy: never
@@ -12,8 +23,8 @@ services:
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
       TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -37,7 +48,9 @@ services:
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
       TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
     depends_on:
-      db:
+      migrate:
+        condition: service_completed_successfully
+      app:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'bun', 'scripts/tracker-health.ts']

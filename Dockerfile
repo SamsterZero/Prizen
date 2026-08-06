@@ -19,4 +19,5 @@ COPY --from=build /app/src/lib/server/secret-crypto.ts ./src/lib/server/secret-c
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 EXPOSE 3000
-CMD ["sh", "-c", "bun run db:push:container && bun ./build"]
+ENTRYPOINT ["/app/scripts/container-entrypoint.sh"]
+CMD ["bun", "./build"]

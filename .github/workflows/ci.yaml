@@ -87,16 +87,55 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Reject missing runtime secrets
+        run: |
+          if env -u SECRET_ENCRYPTION_KEY -u TRACKER_TOKEN docker compose config >/dev/null 2>&1; then
+            echo 'Compose unexpectedly accepted missing runtime secrets.'
+            exit 1
+          fi
+
       - name: Build and start container stack
-        run: docker compose up --detach --build --wait --wait-timeout 180
+        run: |
+          docker compose down --volumes
+          docker compose up --detach --build --wait --wait-timeout 180
 
       - name: Verify application health
         run: curl --fail --show-error http://127.0.0.1:3000/api/health
 
+      - name: Verify tracker restart recovery
+        run: |
+          docker compose restart tracker
+          docker compose up --detach --wait --wait-timeout 180 tracker
+
+      - name: Verify one-command release installation
+        run: |
+          docker compose down --volumes
+          PRIZEN_IMAGE=prizen:local PRIZEN_PORT=3000 docker compose \
+            -p prizen-release-ci -f compose.release.yaml up --detach --wait --wait-timeout 180
+          curl --fail --show-error http://127.0.0.1:3000/api/health
+
+      - name: Verify generated secrets survive initialization
+        run: |
+          before="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm --entrypoint sh init \
+            -c 'sha256sum /run/secrets/prizen/*')"
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm init
+          after="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm --entrypoint sh init \
+            -c 'sha256sum /run/secrets/prizen/*')"
+          test "$before" = "$after"
+
       - name: Show container logs on failure
         if: failure()
-        run: docker compose logs --no-color
+        run: |
+          docker compose logs --no-color
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml logs --no-color
 
       - name: Stop container stack
         if: always()
-        run: docker compose down --volumes
+        run: |
+          docker compose down --volumes
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml down --volumes

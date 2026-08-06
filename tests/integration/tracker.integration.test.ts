@@ -145,6 +145,37 @@ describe('tracker persistence and notification delivery', () => {
 		assert.ok(
 			logs.every((log) => log.status === 'failed' && log.attempts === 1 && log.retry_scheduled)
 		);
+
+		await sql`update notification_logs set next_attempt_at = now()`;
+		await worker(
+			(async () => new Response(null, { status: 204 })) as typeof fetch
+		).deliverPendingNotifications();
+		const recovered = await sql<{ status: string; attempts: number; delivered_at: Date | null }[]>`
+			select status, attempts, delivered_at from notification_logs
+		`;
+		assert.ok(
+			recovered.every(
+				(log) => log.status === 'sent' && log.attempts === 2 && log.delivered_at !== null
+			)
+		);
+	});
+
+	test('recovers an abandoned running scan after a worker restart', async () => {
+		const productId = await seedTracker({ targetPrice: null, channels: false });
+		await sql`
+			update scan_jobs set status = 'running', locked_at = now() - interval '6 minutes',
+				run_at = now() + interval '1 hour'
+			where product_id = ${productId}
+		`;
+		await worker((async () => preview(1100, 'in_stock')) as typeof fetch).scanDueProducts();
+		const [job] = await sql<{ status: string; attempts: number; locked_at: Date | null }[]>`
+			select status, attempts, locked_at from scan_jobs where product_id = ${productId}
+		`;
+		const [history] = await sql<{ observations: number }[]>`
+			select count(*)::integer as observations from price_history where product_id = ${productId}
+		`;
+		assert.deepEqual(job, { status: 'pending', attempts: 0, locked_at: null });
+		assert.equal(history.observations, 2);
 	});
 
 	test('persists out-of-stock availability and exposes a failed scan as stale', async () => {
