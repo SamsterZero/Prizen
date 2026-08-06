@@ -8,6 +8,8 @@ Thanks for helping improve Prizen. Contributions should preserve its central pro
 - For a bug, include reproducible steps and sanitized logs.
 - For a feature, describe the problem before proposing an implementation.
 - For a substantial or security-sensitive change, discuss the approach in an issue before writing code.
+- Report suspected vulnerabilities through the [private security channel](SECURITY.md), not a public issue.
+- Follow the [Code of Conduct](CODE_OF_CONDUCT.md) in all project spaces.
 - Never post credentials, webhook URLs, cookies, database URLs, encryption keys, or personal data.
 
 The [Prizen Roadmap](https://github.com/users/SamsterZero/projects/4) shows current priorities. Start with a high-priority `Todo` item in the active milestone, or ask on the issue before picking it up.

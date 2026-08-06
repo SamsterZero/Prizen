@@ -2,9 +2,12 @@
 
 ```text
 CONTRIBUTING.md           # Contributor setup, validation, and review expectations
+CODE_OF_CONDUCT.md        # Community participation and enforcement expectations
+CHANGELOG.md              # Notable changes grouped by release
 LICENSE                   # Apache License 2.0
 PROJECT.md                # Planning workflow, milestones, and definition of done
 README.md                 # Product overview and installation entrypoint
+SECURITY.md               # Private vulnerability reporting and support policy
 src/
   lib/
     modules/              # Domain contracts and feature slices

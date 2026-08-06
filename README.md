@@ -41,6 +41,9 @@ The complete product and engineering specification is in [docs](docs): vision, a
 
 - [Project guide](PROJECT.md) explains milestones, planning fields, and the definition of done.
 - [Contributing guide](CONTRIBUTING.md) covers setup, validation, pull requests, and architectural requirements.
+- [Security policy](SECURITY.md) explains private vulnerability reporting and supported versions.
+- [Release guide](docs/14-releasing.md) documents versioning, GHCR images, provenance, and rollback.
+- [Changelog](CHANGELOG.md) records notable changes by release.
 - [GitHub Roadmap](https://github.com/users/SamsterZero/projects/4) tracks actionable work.
 
 ## License
