@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -77,8 +79,26 @@ jobs:
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
 
-      - name: Run end-to-end tests
-        run: bun run test:e2e
+      - name: Run critical browser smoke test
+        run: bunx playwright test tests/e2e/home.pw.ts
+
+      - name: Detect tracking workflow changes
+        if: github.event_name == 'pull_request'
+        id: tracking-changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -Eq \
+            '^(tests/e2e/tracking\.pw\.ts|playwright\.config\.ts|src/routes/(dashboard|api/(products|tracking))/|src/lib/(components|server/(db|marketplace))/)'; then
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run tracking browser tests for relevant changes
+        if: steps.tracking-changes.outputs.run == 'true'
+        run: bunx playwright test tests/e2e/tracking.pw.ts
 
   container:
     name: Container smoke test
@@ -115,56 +135,10 @@ jobs:
           docker compose restart tracker
           docker compose up --detach --wait --wait-timeout 180 tracker
 
-      - name: Verify one-command release installation
-        run: |
-          docker compose down --volumes
-          PRIZEN_IMAGE=prizen:local PRIZEN_PORT=3000 docker compose \
-            -p prizen-release-ci -f compose.release.yaml up --detach --wait --wait-timeout 180
-          curl --fail --show-error http://127.0.0.1:3000/api/health
-
-      - name: Verify fixed origin ignores spoofed proxy headers
-        run: |
-          trusted_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
-            --request POST --header 'content-type: application/x-www-form-urlencoded' \
-            --header 'origin: https://prizen.example.test' \
-            --header 'x-forwarded-host: attacker.example' \
-            --header 'x-forwarded-proto: http' \
-            http://127.0.0.1:3000/api/auth/register)"
-          rejected_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
-            --request POST --header 'content-type: application/x-www-form-urlencoded' \
-            --header 'origin: https://attacker.example' \
-            http://127.0.0.1:3000/api/auth/register)"
-          test "$trusted_status" = '410'
-          test "$rejected_status" = '403'
-
-      - name: Verify generated secrets survive initialization
-        run: |
-          before="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
-            -f compose.release.yaml run --rm --entrypoint sh init \
-            -c 'sha256sum /run/secrets/prizen/*')"
-          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
-            -f compose.release.yaml run --rm init
-          after="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
-            -f compose.release.yaml run --rm --entrypoint sh init \
-            -c 'sha256sum /run/secrets/prizen/*')"
-          test "$before" = "$after"
-
-      - name: Verify upgrade from the latest stable schema
-        run: bash scripts/test-release-upgrade.sh
-
-      - name: Verify backup, restore, and rollback recovery
-        run: bash scripts/test-release-recovery.sh
-
       - name: Show container logs on failure
         if: failure()
-        run: |
-          docker compose logs --no-color
-          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
-            -f compose.release.yaml logs --no-color
+        run: docker compose logs --no-color
 
       - name: Stop container stack
         if: always()
-        run: |
-          docker compose down --volumes
-          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
-            -f compose.release.yaml down --volumes
+        run: docker compose down --volumes

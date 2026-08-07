@@ -21,8 +21,13 @@ env:
   IMAGE_NAME: samsterzero/prizen
 
 jobs:
+  acceptance:
+    name: Verify release candidate
+    uses: ./.github/workflows/release-acceptance.yaml
+
   release:
     name: Publish release
+    needs: acceptance
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
