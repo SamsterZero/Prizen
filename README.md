@@ -11,7 +11,7 @@ account or control plane is required.
 
 ## Install
 
-The current installable version is `v0.1.0-rc.1`. It runs the app, tracker, PostgreSQL, automatic
+The current stable version is `v0.1.0`. It runs the app, tracker, PostgreSQL, automatic
 migrations, and persistent secret initialization as one Compose application.
 
 ### Docker
@@ -19,16 +19,16 @@ migrations, and persistent secret initialization as one Compose application.
 Requires Docker Compose 2.34 or newer:
 
 ```sh
-docker compose -f oci://ghcr.io/samsterzero/prizen-stack:0.1.0-rc.1 up -d --wait
+docker compose -f oci://ghcr.io/samsterzero/prizen-stack:0.1.0 up -d --wait
 ```
 
 ### Podman
 
 ```sh
 curl --fail --location --output compose.release.yaml \
-  https://github.com/SamsterZero/Prizen/releases/download/v0.1.0-rc.1/compose.release.yaml
+  https://github.com/SamsterZero/Prizen/releases/download/v0.1.0/compose.release.yaml
 
-PRIZEN_IMAGE=ghcr.io/samsterzero/prizen:0.1.0-rc.1 \
+PRIZEN_IMAGE=ghcr.io/samsterzero/prizen:0.1.0 \
   podman compose -f compose.release.yaml up -d
 ```
 
@@ -40,10 +40,10 @@ for reproducible installs; `latest` is reserved for stable releases.
 
 ## Status
 
-Prizen is currently a local Tracking MVP release candidate. Amazon product-page retrieval is the
-default tracking method. Eligible owners can optionally configure Amazon Creators API credentials,
-which are encrypted in the local database. See [Amazon data access](docs/15-amazon-creators-api.md)
-for limitations.
+Prizen `v0.1.0` is the stable local Tracking MVP. Amazon product-page retrieval is the default
+tracking method. Eligible owners can optionally configure Amazon Creators API credentials, which
+are encrypted in the local database. See [Amazon data access](docs/15-amazon-creators-api.md) for
+limitations.
 
 ## Versions
 
