@@ -2,7 +2,9 @@
 
 Prizen is a containerized, self-hosted price-intelligence application. It tracks marketplace products, preserves price and availability history, and sends useful alerts while keeping operational data under the installation owner's control.
 
-This file explains how work is organized. Product and engineering details live in [docs](docs), and setup instructions live in [README.md](README.md).
+This file explains how work is organized. Product and engineering details live in [docs](docs),
+user installation starts in [README.md](README.md), and local development setup lives in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Non-negotiable constraints
 

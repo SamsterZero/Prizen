@@ -12,7 +12,7 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 
 ## v0.1.0 — Tracking MVP Completion
 
-- [ ] Amazon adapter with compliant data access
+- [x] Amazon adapter with compliant data access
 - [x] Product intake endpoint and first scan
 - [x] Discord and Telegram channels
 - [x] Record-low notification delivery and retry scheduling
@@ -20,12 +20,12 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 - [x] Availability tracking
 - [x] Target-price alerts
 - [x] Durable background job queue
-- [ ] End-to-end tracking and notification coverage
-- [ ] Reproducible containerized release acceptance checklist
+- [x] End-to-end tracking and notification coverage
+- [x] Reproducible containerized release acceptance checklist
 
 ## v0.2.0 — Self-Hosted Operations
 
-- [ ] Replace production `db:push` with deterministic migrations
+- [x] Replace production `db:push` with deterministic migrations
 - [ ] Harden Compose and reverse-proxy configuration
 - [ ] Test backup, restore, upgrade, and rollback procedures
 - [ ] Document resource guidance and disaster recovery

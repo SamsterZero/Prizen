@@ -43,4 +43,10 @@ Archiving a product prevents new scans but preserves its history. Deleting a pro
 
 ## Migrations
 
-Use `bun run db:generate` after a schema change, review the generated SQL, then apply it with `bun run db:migrate`. Do not use `db:push` outside local development. A production migration must be backward compatible with the currently deployed application.
+Use `bun run db:generate` after a schema change, review the generated SQL, then apply it locally
+with `bun run db:migrate`. A production migration must be backward compatible with the currently
+deployed application.
+
+Released stacks run the reviewed migrations through a one-shot `migrate` service before the app
+and tracker start. `db:push` is allowed only for disposable local schema experimentation. Never
+use it for a release, an upgrade, a shared database, or any data that must be preserved.
