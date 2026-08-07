@@ -413,6 +413,7 @@
 
 							<div class="mt-5 flex flex-wrap gap-3">
 								<Button
+									type="submit"
 									class="h-10 bg-indigo-600 px-4 text-white hover:bg-indigo-700"
 									disabled={savingMarketplace}
 								>
@@ -498,6 +499,7 @@
 									/>
 								</label>
 								<Button
+									type="submit"
 									class="h-10 bg-indigo-600 px-4 text-white hover:bg-indigo-700"
 									disabled={savingPincode}
 								>
@@ -633,6 +635,7 @@
 										</label>
 									</div>
 									<Button
+										type="submit"
 										class="mt-5 h-10 bg-indigo-600 px-4 text-white hover:bg-indigo-700"
 										disabled={saving}
 									>
@@ -681,6 +684,7 @@
 										/>
 									</label>
 									<Button
+										type="submit"
 										class="mt-5 h-10 bg-sky-600 px-4 text-white hover:bg-sky-700"
 										disabled={saving}
 									>
