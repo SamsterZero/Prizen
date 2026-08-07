@@ -4,7 +4,7 @@ Prizen is a self-hosted price tracker for marketplace products. It records price
 history and sends record-low or target-price alerts to Discord or Telegram. No Prizen cloud
 account or control plane is required.
 
-**Quick links:** [Install](#install) · [Status](#status) · [Current version](#v010-rc1) ·
+**Quick links:** [Install](#install) · [Status](#status) · [Versions](#versions) ·
 [User guide](https://github.com/SamsterZero/Prizen/wiki) ·
 [Troubleshooting](https://github.com/SamsterZero/Prizen/wiki/Troubleshooting) ·
 [Release notes](https://github.com/SamsterZero/Prizen/releases)
@@ -45,18 +45,10 @@ default tracking method. Eligible owners can optionally configure Amazon Creator
 which are encrypted in the local database. See [Amazon data access](docs/15-amazon-creators-api.md)
 for limitations.
 
-<!-- Add each new version section directly below this comment so versions remain newest-first. -->
+## Versions
 
-## v0.1.0-rc.1
-
-- Tracks Amazon prices and availability on configurable polling intervals
-- Stores price history and detects record lows and target-price crossings
-- Sends Discord and Telegram notifications
-- Supports default page retrieval and optional owner-configured Creators API access
-- Recovers durable scan jobs with bounded retries and failure backoff
-- Provides versioned Docker and Podman deployment, health checks, migrations, and generated secrets
-
-[Full v0.1.0-rc.1 release notes](https://github.com/SamsterZero/Prizen/releases/tag/v0.1.0-rc.1)
+See [GitHub Releases](https://github.com/SamsterZero/Prizen/releases) for available versions,
+features, changes, and installation assets. Pin an explicit version for reproducible deployments.
 
 ## Documentation
 
