@@ -41,16 +41,29 @@ notifications:
 APP_URL=http://localhost:5173 bun scripts/tracker.ts
 ```
 
-Podman users can replace `docker compose` with `podman compose`.
-
-To test the complete container stack instead:
+To test the complete production-style stack from the current source:
 
 ```sh
-docker compose up -d --build
-docker compose ps
+docker build -t prizen:local .
+PRIZEN_IMAGE=prizen:local docker compose -p prizen-source \
+  -f compose.release.yaml up -d --wait
 ```
 
-Stop it with `docker compose down`. Add `--volumes` only to intentionally delete local data.
+With Podman:
+
+```sh
+systemctl --user enable --now podman.socket
+podman build -t docker.io/library/prizen:local .
+PRIZEN_IMAGE=docker.io/library/prizen:local podman compose -p prizen-source \
+  -f compose.release.yaml up -d --wait
+```
+
+Open `http://127.0.0.1:3000`. If that port is occupied, add `PRIZEN_PORT=3001` and
+`ORIGIN=http://localhost:3001` before the Compose command. Stop the stack with the same Compose
+project and file. Add `--volumes` only when intentionally resetting its database and secrets.
+
+After source changes, rebuild the same image and rerun `up -d --wait --force-recreate` with the same
+project name. Compose preserves the database and secrets volumes.
 
 ## Make and verify changes
 

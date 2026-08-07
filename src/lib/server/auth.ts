@@ -3,6 +3,7 @@ import { and, eq, gt } from 'drizzle-orm';
 import type { Cookies } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { sessions, users } from '$lib/server/db/schema';
+import { sessionCookieIsSecure } from '$lib/server/session-cookie';
 
 const sessionCookie = 'prizen_session';
 const sessionLifetimeMs = 30 * 24 * 60 * 60 * 1_000;
@@ -19,9 +20,7 @@ export async function createSession(userId: string, cookies: Cookies) {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure: process.env.ORIGIN
-			? process.env.ORIGIN.startsWith('https://')
-			: process.env.NODE_ENV === 'production',
+		secure: sessionCookieIsSecure(),
 		expires: expiresAt
 	});
 }

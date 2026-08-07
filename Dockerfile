@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.14 AS build
+FROM docker.io/oven/bun:1.3.14 AS build
 WORKDIR /app
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
@@ -7,7 +7,7 @@ COPY . .
 # is lazy, so a non-routable build-only URL is sufficient and no connection is made.
 RUN DATABASE_URL=postgres://build:build@127.0.0.1:5432/build bun run build
 
-FROM oven/bun:1.3.14
+FROM docker.io/oven/bun:1.3.14
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/package.json /app/bun.lock ./

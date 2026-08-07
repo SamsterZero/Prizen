@@ -87,6 +87,10 @@ jobs:
     env:
       SECRET_ENCRYPTION_KEY: ci-only-encryption-key-at-least-32-characters
       TRACKER_TOKEN: ci-only-tracker-token-at-least-32-characters
+      ORIGIN: https://prizen.example.test
+      PRIZEN_DB_USER: prizen_ci
+      PRIZEN_DB_NAME: prizen_ci
+      PRIZEN_DATABASE_PASSWORD: ci-only-database-password
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -117,6 +121,21 @@ jobs:
           PRIZEN_IMAGE=prizen:local PRIZEN_PORT=3000 docker compose \
             -p prizen-release-ci -f compose.release.yaml up --detach --wait --wait-timeout 180
           curl --fail --show-error http://127.0.0.1:3000/api/health
+
+      - name: Verify fixed origin ignores spoofed proxy headers
+        run: |
+          trusted_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'content-type: application/x-www-form-urlencoded' \
+            --header 'origin: https://prizen.example.test' \
+            --header 'x-forwarded-host: attacker.example' \
+            --header 'x-forwarded-proto: http' \
+            http://127.0.0.1:3000/api/auth/register)"
+          rejected_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'content-type: application/x-www-form-urlencoded' \
+            --header 'origin: https://attacker.example' \
+            http://127.0.0.1:3000/api/auth/register)"
+          test "$trusted_status" = '410'
+          test "$rejected_status" = '403'
 
       - name: Verify generated secrets survive initialization
         run: |

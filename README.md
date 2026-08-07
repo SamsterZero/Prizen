@@ -62,6 +62,7 @@ features, changes, and installation assets. Pin an explicit version for reproduc
 - [Troubleshooting](https://github.com/SamsterZero/Prizen/wiki/Troubleshooting) ·
   [Releases](https://github.com/SamsterZero/Prizen/wiki/Releases)
 - [Engineering documentation](docs) ·
+  [Production reverse proxy](docs/17-reverse-proxy.md) ·
   [Tracking MVP acceptance checklist](docs/16-tracking-mvp-acceptance.md)
 - [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Changelog](CHANGELOG.md)
 - [Project roadmap](https://github.com/users/SamsterZero/projects/4)
