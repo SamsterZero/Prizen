@@ -152,6 +152,9 @@ jobs:
       - name: Verify upgrade from the latest stable schema
         run: bash scripts/test-release-upgrade.sh
 
+      - name: Verify backup, restore, and rollback recovery
+        run: bash scripts/test-release-recovery.sh
+
       - name: Show container logs on failure
         if: failure()
         run: |

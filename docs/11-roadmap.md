@@ -27,7 +27,7 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 
 - [x] Replace production `db:push` with deterministic migrations
 - [ ] Harden Compose and reverse-proxy configuration
-- [ ] Test backup, restore, upgrade, and rollback procedures
+- [x] Test backup, restore, upgrade, and rollback procedures
 - [ ] Document resource guidance and disaster recovery
 
 ## v0.3.0 — Intelligence & Marketplace Expansion
