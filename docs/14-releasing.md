@@ -11,13 +11,16 @@ Use semantic versions:
 - Major (`v2.0.0`) for breaking application, API, configuration, or migration changes
 
 Pre-release tags such as `v1.0.0-rc.1` may be used for release candidates but are not tagged as `latest`.
+For milestone 2, publish `v0.2.0-rc.1` only after issue #6 is merged and CI passes. Promote to
+`v0.2.0` after the published candidate passes the recovery procedure; fixes produce `-rc.2` and so on.
 
 ## Release checklist
 
 1. Confirm the target milestone is complete.
 2. Update [CHANGELOG.md](../CHANGELOG.md), moving relevant entries out of `Unreleased`.
 3. Confirm migrations are explicit, reviewed, backward compatible, and recoverable.
-4. Verify backup, upgrade, rollback, and container health procedures.
+4. Verify the [backup, upgrade, and rollback procedure](18-backup-restore-and-upgrades.md) and
+   container health checks.
 5. Confirm CI passes on the release commit.
 6. Create and push an annotated semantic-version tag:
 
@@ -26,7 +29,8 @@ Pre-release tags such as `v1.0.0-rc.1` may be used for release candidates but ar
    git push origin v1.0.0
    ```
 
-7. Verify the GitHub Release, GHCR image and Compose application, SBOM, and provenance attestation.
+7. Verify the GitHub Release, lifecycle scripts, GHCR image and Compose application, SBOM, and
+   provenance attestation.
 8. Complete the [Tracking MVP release acceptance procedure](16-tracking-mvp-acceptance.md) using
    the published image before announcing the release.
 
@@ -42,10 +46,11 @@ ghcr.io/samsterzero/prizen:latest
 
 The `latest` tag is published only for stable versions.
 
-The workflow also publishes `compose.release.yaml` as a GitHub Release asset and an OCI Compose
-application at `ghcr.io/samsterzero/prizen-stack:<version>`. The Compose application pins the
-Prizen image by digest, generates persistent installation secrets on first start, runs migrations
-once, and then starts the app and tracker.
+The workflow also publishes `compose.release.yaml`, `backup-release.sh`, and `restore-release.sh` as
+GitHub Release assets, plus an OCI Compose application at
+`ghcr.io/samsterzero/prizen-stack:<version>`. The Compose application pins the Prizen image by
+digest, generates persistent installation secrets on first start, runs migrations once, and then
+starts the app and tracker.
 
 Install with Docker Compose 2.34 or newer:
 

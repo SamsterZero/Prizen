@@ -65,6 +65,10 @@ after every deployed application version has stopped using it.
 
 ## Failed migration recovery
 
+The supported end-to-end commands, including encryption-key recovery and retention guidance, are in
+[Backup, Restore, Upgrade, and Rollback](18-backup-restore-and-upgrades.md). The commands below
+describe the PostgreSQL portion only.
+
 Create a PostgreSQL backup before every upgrade:
 
 ```sh

@@ -1,7 +1,7 @@
 {
 	"name": "prizen",
 	"private": true,
-	"version": "0.1.0",
+	"version": "0.2.0-rc.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -20,7 +20,9 @@
 		"db:push:container": "drizzle-kit push --force",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "drizzle-kit migrate",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"release:backup": "bash scripts/backup-release.sh",
+		"release:restore": "bash scripts/restore-release.sh"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
