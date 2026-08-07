@@ -4,6 +4,7 @@ import { hashPassword, verifyPassword } from './password';
 import { availabilityIsStale } from './availability';
 import { consumeRateLimit } from './rate-limit';
 import { decryptSecret, encryptSecret } from './secret-crypto';
+import { sessionCookieIsSecure } from './session-cookie';
 
 describe('security helpers', () => {
 	test('hashes and verifies passwords without storing the original value', async () => {
@@ -37,5 +38,12 @@ describe('security helpers', () => {
 		assert.equal(availabilityIsStale('failed', new Date(now), 900, now), true);
 		assert.equal(availabilityIsStale('pending', new Date(now - 3_600_001), 900, now), true);
 		assert.equal(availabilityIsStale('pending', new Date(now - 60_000), 900, now), false);
+	});
+
+	test('uses secure session cookies for HTTPS and production-safe defaults', () => {
+		assert.equal(sessionCookieIsSecure('https://prices.example.com', 'production'), true);
+		assert.equal(sessionCookieIsSecure('http://localhost:3000', 'production'), false);
+		assert.equal(sessionCookieIsSecure(undefined, 'production'), true);
+		assert.equal(sessionCookieIsSecure('not-an-origin', 'production'), true);
 	});
 });

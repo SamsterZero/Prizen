@@ -9,6 +9,8 @@ services:
     image: *prizen-image
     restart: 'no'
     entrypoint: ['bun', 'scripts/init-secrets.ts']
+    environment:
+      PRIZEN_DATABASE_PASSWORD: ${PRIZEN_DATABASE_PASSWORD:-}
     volumes:
       - prizen_secrets:/run/secrets/prizen
 
@@ -16,8 +18,8 @@ services:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: prizen
-      POSTGRES_DB: prizen
+      POSTGRES_USER: ${PRIZEN_DB_USER:-prizen}
+      POSTGRES_DB: ${PRIZEN_DB_NAME:-prizen}
       POSTGRES_PASSWORD_FILE: /run/secrets/prizen/database-password
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -26,7 +28,7 @@ services:
       init:
         condition: service_completed_successfully
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U prizen -d prizen']
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 10
@@ -35,6 +37,9 @@ services:
     image: *prizen-image
     restart: 'no'
     command: ['bun', 'run', 'db:migrate']
+    environment:
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes: *prizen-secrets
     depends_on:
       db:
@@ -47,6 +52,8 @@ services:
       - 127.0.0.1:${PRIZEN_PORT:-3000}:3000
     environment:
       ORIGIN: ${ORIGIN:-http://localhost:3000}
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes: *prizen-secrets
     depends_on:
       migrate:
@@ -70,6 +77,8 @@ services:
     command: ['bun', 'scripts/tracker.ts']
     environment:
       APP_URL: http://app:3000
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes: *prizen-secrets
     depends_on:
       migrate:
