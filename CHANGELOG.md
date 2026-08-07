@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Tested preservation of tracked price history, owner settings, and encryption keys
 - Retention and secure-deletion guidance for installation owners
 
+### Changed
+
+- Pull requests use fast smoke and path-sensitive browser coverage; complete acceptance runs before
+  releases, on manual dispatch, and weekly
+
 ## [0.1.0] - 2026-08-07
 
 ### Added

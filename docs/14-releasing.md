@@ -34,6 +34,10 @@ For milestone 2, publish `v0.2.0-rc.1` only after issue #6 is merged and CI pass
 8. Complete the [Tracking MVP release acceptance procedure](16-tracking-mvp-acceptance.md) using
    the published image before announcing the release.
 
+Pull requests run fast quality checks, a critical browser smoke test, path-sensitive tracking tests,
+and a container health smoke test. The complete E2E and container lifecycle suite runs weekly, on
+manual dispatch, and as a mandatory dependency of the release publishing job.
+
 ## Published image
 
 The release workflow publishes:

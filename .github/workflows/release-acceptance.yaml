@@ -1,0 +1,137 @@
+name: Release acceptance
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: acceptance-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  application:
+    name: Full application acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: prizen
+          POSTGRES_PASSWORD: prizen-ci
+          POSTGRES_DB: prizen
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U prizen -d prizen"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: 'true'
+      DATABASE_URL: postgres://prizen:prizen-ci@127.0.0.1:5432/prizen
+      SECRET_ENCRYPTION_KEY: ci-only-encryption-key-at-least-32-characters
+      TRACKER_TOKEN: ci-only-tracker-token-at-least-32-characters
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Apply database migrations
+        run: bun run db:migrate
+
+      - name: Run quality, unit, and integration checks
+        env:
+          ALLOW_INTEGRATION_DB_RESET: 'true'
+        run: |
+          bun run lint
+          bun run check
+          bun run test
+          bun run test:integration
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run complete end-to-end suite
+        run: bun run test:e2e
+
+  lifecycle:
+    name: Full container lifecycle acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SECRET_ENCRYPTION_KEY: ci-only-encryption-key-at-least-32-characters
+      TRACKER_TOKEN: ci-only-tracker-token-at-least-32-characters
+      ORIGIN: https://prizen.example.test
+      PRIZEN_DB_USER: prizen_ci
+      PRIZEN_DB_NAME: prizen_ci
+      PRIZEN_DATABASE_PASSWORD: ci-only-database-password
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Build candidate image
+        run: docker build -t prizen:local .
+
+      - name: Verify one-command release installation
+        run: |
+          PRIZEN_IMAGE=prizen:local PRIZEN_PORT=3000 docker compose \
+            -p prizen-release-ci -f compose.release.yaml up --detach --wait --wait-timeout 180
+          curl --fail --show-error http://127.0.0.1:3000/api/health
+
+      - name: Verify fixed origin ignores spoofed proxy headers
+        run: |
+          trusted_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'content-type: application/x-www-form-urlencoded' \
+            --header 'origin: https://prizen.example.test' \
+            --header 'x-forwarded-host: attacker.example' \
+            --header 'x-forwarded-proto: http' \
+            http://127.0.0.1:3000/api/auth/register)"
+          rejected_status="$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --request POST --header 'content-type: application/x-www-form-urlencoded' \
+            --header 'origin: https://attacker.example' \
+            http://127.0.0.1:3000/api/auth/register)"
+          test "$trusted_status" = '410'
+          test "$rejected_status" = '403'
+
+      - name: Verify generated secrets survive initialization
+        run: |
+          before="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm --entrypoint sh init \
+            -c 'sha256sum /run/secrets/prizen/*')"
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm init
+          after="$(PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml run --rm --entrypoint sh init \
+            -c 'sha256sum /run/secrets/prizen/*')"
+          test "$before" = "$after"
+
+      - name: Verify upgrade from the latest stable schema
+        run: bash scripts/test-release-upgrade.sh
+
+      - name: Verify backup, restore, and rollback recovery
+        run: bash scripts/test-release-recovery.sh
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml logs --no-color
+
+      - name: Stop container stack
+        if: always()
+        run: |
+          PRIZEN_IMAGE=prizen:local docker compose -p prizen-release-ci \
+            -f compose.release.yaml down --volumes
