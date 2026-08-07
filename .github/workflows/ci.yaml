@@ -130,6 +130,9 @@ jobs:
             -c 'sha256sum /run/secrets/prizen/*')"
           test "$before" = "$after"
 
+      - name: Verify upgrade from the latest stable schema
+        run: bash scripts/test-release-upgrade.sh
+
       - name: Show container logs on failure
         if: failure()
         run: |
