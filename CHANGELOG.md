@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.2.0-rc.1] - 2026-08-07
+## [0.2.0] - 2026-08-07
 
 ### Added
 
@@ -33,6 +33,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Reproducible Tracking MVP release acceptance and recovery checks
 - One-command production Compose deployment with persistent generated secrets and explicit migrations
 
-[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.2.0-rc.1...HEAD
-[0.2.0-rc.1]: https://github.com/SamsterZero/Prizen/compare/v0.1.0...v0.2.0-rc.1
+[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/SamsterZero/Prizen/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SamsterZero/Prizen/releases/tag/v0.1.0
