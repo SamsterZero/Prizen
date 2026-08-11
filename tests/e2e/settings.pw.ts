@@ -30,11 +30,17 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	});
 	await page.route('**/api/settings/marketplaces/flipkart', async (route) => {
 		if (route.request().method() === 'GET') {
-			await route.fulfill({ contentType: 'application/json', body: '{"configured":false}' });
+			await route.fulfill({
+				contentType: 'application/json',
+				body: '{"configured":false,"dataSource":"html"}'
+			});
 			return;
 		}
 		flipkartRequest = route.request().postDataJSON() as Record<string, unknown>;
-		await route.fulfill({ contentType: 'application/json', body: '{"configured":true}' });
+		await route.fulfill({
+			contentType: 'application/json',
+			body: '{"configured":true,"dataSource":"affiliate-api"}'
+		});
 	});
 	await page.route('**/api/notifications/channels', async (route) => {
 		if (route.request().method() === 'GET') {
@@ -83,6 +89,7 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	await page.getByRole('button', { name: 'Save Amazon settings' }).click();
 	await expect(page.getByText('Amazon settings saved.')).toBeVisible();
 	await expect.poll(() => marketplaceRequest).toMatchObject({ dataSource: 'html' });
+	await page.getByLabel('Data source').last().selectOption('affiliate-api');
 	await page.getByLabel('Affiliate ID').fill('owner-id');
 	await page.getByLabel('Affiliate token').fill('owner-token');
 	await page.getByRole('button', { name: 'Save Flipkart settings' }).click();
@@ -90,6 +97,7 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	await expect
 		.poll(() => flipkartRequest)
 		.toEqual({
+			dataSource: 'affiliate-api',
 			affiliateId: 'owner-id',
 			affiliateToken: 'owner-token'
 		});

@@ -15,31 +15,50 @@ export async function GET({ locals }) {
 			eq(marketplaceConfigurations.userId, locals.user.id),
 			eq(marketplaceConfigurations.marketplaceSlug, marketplaceSlug)
 		),
-		columns: { secretReference: true }
+		columns: { dataSource: true, secretReference: true }
 	});
-	return json({ configured: Boolean(configuration?.secretReference) });
+	return json({
+		dataSource: configuration?.dataSource === 'affiliate-api' ? 'affiliate-api' : 'html',
+		configured: Boolean(configuration?.secretReference)
+	});
 }
 
 export async function PATCH({ request, locals }) {
 	if (!locals.user) throw error(401, 'Authentication required.');
 	const parsed = flipkartMarketplaceSettingsSchema.safeParse(await request.json());
 	if (!parsed.success) throw error(400, parsed.error.issues[0]?.message ?? 'Invalid settings.');
-	const secretReference = encryptSecret(
-		JSON.stringify(parsed.data satisfies FlipkartAffiliateConfig)
-	);
+	const existing = await db.query.marketplaceConfigurations.findFirst({
+		where: and(
+			eq(marketplaceConfigurations.userId, locals.user.id),
+			eq(marketplaceConfigurations.marketplaceSlug, marketplaceSlug)
+		),
+		columns: { secretReference: true }
+	});
+	let secretReference = existing?.secretReference ?? null;
+	if (parsed.data.affiliateId && parsed.data.affiliateToken) {
+		secretReference = encryptSecret(
+			JSON.stringify({
+				affiliateId: parsed.data.affiliateId,
+				affiliateToken: parsed.data.affiliateToken
+			} satisfies FlipkartAffiliateConfig)
+		);
+	}
+	if (parsed.data.dataSource === 'affiliate-api' && !secretReference) {
+		throw error(400, 'Configure Affiliate API credentials before enabling API mode.');
+	}
 	await db
 		.insert(marketplaceConfigurations)
 		.values({
 			userId: locals.user.id,
 			marketplaceSlug,
-			dataSource: 'affiliate-api',
+			dataSource: parsed.data.dataSource,
 			secretReference
 		})
 		.onConflictDoUpdate({
 			target: [marketplaceConfigurations.userId, marketplaceConfigurations.marketplaceSlug],
-			set: { dataSource: 'affiliate-api', secretReference, updatedAt: new Date() }
+			set: { dataSource: parsed.data.dataSource, secretReference, updatedAt: new Date() }
 		});
-	return json({ configured: true });
+	return json({ dataSource: parsed.data.dataSource, configured: Boolean(secretReference) });
 }
 
 export async function DELETE({ locals }) {

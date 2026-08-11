@@ -11,11 +11,8 @@ import {
 	isAmazonUrl,
 	MarketplaceFetchError
 } from '$lib/server/marketplace/amazon-adapter';
-import {
-	fetchFlipkartSnapshot,
-	isFlipkartUrl,
-	type FlipkartAffiliateConfig
-} from '$lib/server/marketplace/flipkart';
+import { isFlipkartUrl, type FlipkartAffiliateConfig } from '$lib/server/marketplace/flipkart';
+import { fetchFlipkartSnapshot } from '$lib/server/marketplace/flipkart-adapter';
 
 export async function POST({ request, fetch, locals, getClientAddress }) {
 	const internalTracker =
@@ -62,22 +59,24 @@ export async function POST({ request, fetch, locals, getClientAddress }) {
 	}
 	try {
 		if (marketplaceSlug === 'flipkart') {
-			if (!configuration?.secretReference) {
-				throw new MarketplaceFetchError('Configure Flipkart Affiliate API credentials first.', 503);
-			}
-			let affiliate: FlipkartAffiliateConfig;
-			try {
-				affiliate = JSON.parse(
-					decryptSecret(configuration.secretReference)
-				) as FlipkartAffiliateConfig;
-			} catch {
-				throw new MarketplaceFetchError(
-					'The encrypted Flipkart Affiliate API configuration is invalid.',
-					503
-				);
+			let affiliate: FlipkartAffiliateConfig = { affiliateId: '', affiliateToken: '' };
+			if (configuration?.secretReference) {
+				try {
+					affiliate = JSON.parse(
+						decryptSecret(configuration.secretReference)
+					) as FlipkartAffiliateConfig;
+				} catch {
+					throw new MarketplaceFetchError(
+						'The encrypted Flipkart Affiliate API configuration is invalid.',
+						503
+					);
+				}
 			}
 			return json({
-				...(await fetchFlipkartSnapshot(url, fetch, affiliate)),
+				...(await fetchFlipkartSnapshot(url, fetch, {
+					dataSource: configuration?.dataSource,
+					affiliate
+				})),
 				marketplace: { slug: 'flipkart', name: 'Flipkart' }
 			});
 		}

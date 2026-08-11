@@ -52,6 +52,7 @@
 	let marketplaceMessage = $state('');
 	let marketplaceError = $state(false);
 	let flipkartConfigured = $state(false);
+	let flipkartDataSource = $state<'html' | 'affiliate-api'>('html');
 	let flipkartAffiliateId = $state('');
 	let flipkartAffiliateToken = $state('');
 	let savingFlipkart = $state(false);
@@ -100,9 +101,12 @@
 		try {
 			const response = await fetch('/api/settings/marketplaces/flipkart');
 			if (!response.ok) throw new Error('Could not load Flipkart settings.');
-			flipkartConfigured = Boolean(
-				((await response.json()) as { configured?: boolean }).configured
-			);
+			const settings = (await response.json()) as {
+				configured?: boolean;
+				dataSource?: 'html' | 'affiliate-api';
+			};
+			flipkartConfigured = Boolean(settings.configured);
+			flipkartDataSource = settings.dataSource ?? 'html';
 		} catch (exception) {
 			flipkartError = true;
 			flipkartMessage =
@@ -120,13 +124,19 @@
 				method: 'PATCH',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({
-					affiliateId: flipkartAffiliateId,
-					affiliateToken: flipkartAffiliateToken
+					dataSource: flipkartDataSource,
+					affiliateId: flipkartAffiliateId || undefined,
+					affiliateToken: flipkartAffiliateToken || undefined
 				})
 			});
-			const data = (await response.json()) as { configured?: boolean; message?: string };
+			const data = (await response.json()) as {
+				configured?: boolean;
+				dataSource?: 'html' | 'affiliate-api';
+				message?: string;
+			};
 			if (!response.ok) throw new Error(data.message ?? 'Could not save Flipkart settings.');
 			flipkartConfigured = Boolean(data.configured);
+			flipkartDataSource = data.dataSource ?? flipkartDataSource;
 			flipkartAffiliateId = '';
 			flipkartAffiliateToken = '';
 			flipkartMessage = 'Flipkart settings saved.';
@@ -519,34 +529,44 @@
 										{/if}
 									</div>
 									<p class="mt-1 max-w-2xl text-sm text-slate-500">
-										Uses Flipkart's official Affiliate Product API. Prizen does not scrape Flipkart
-										pages; credentials are encrypted and stay on this installation.
+										HTML mode reads one public product page without credentials. Eligible Flipkart
+										affiliates can use the official API instead.
 									</p>
 								</div>
 							</div>
-							<div class="mt-5 grid gap-4 sm:grid-cols-2">
-								<label class="text-sm font-semibold">
-									Affiliate ID
-									<input
-										class="mt-2 w-full rounded-xl border-slate-300"
-										bind:value={flipkartAffiliateId}
-										autocomplete="off"
-										placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate tracking ID'}
-										required
-									/>
-								</label>
-								<label class="text-sm font-semibold">
-									Affiliate token
-									<input
-										class="mt-2 w-full rounded-xl border-slate-300"
-										bind:value={flipkartAffiliateToken}
-										autocomplete="new-password"
-										placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate API token'}
-										type="password"
-										required
-									/>
-								</label>
-							</div>
+							<label class="mt-5 block max-w-md text-sm font-semibold">
+								Data source
+								<select
+									class="mt-2 w-full rounded-xl border-slate-300"
+									bind:value={flipkartDataSource}
+								>
+									<option value="html">Product page HTML (default)</option>
+									<option value="affiliate-api">Flipkart Affiliate API</option>
+								</select>
+							</label>
+							{#if flipkartDataSource === 'affiliate-api'}
+								<div class="mt-5 grid gap-4 sm:grid-cols-2">
+									<label class="text-sm font-semibold">
+										Affiliate ID
+										<input
+											class="mt-2 w-full rounded-xl border-slate-300"
+											bind:value={flipkartAffiliateId}
+											autocomplete="off"
+											placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate tracking ID'}
+										/>
+									</label>
+									<label class="text-sm font-semibold">
+										Affiliate token
+										<input
+											class="mt-2 w-full rounded-xl border-slate-300"
+											bind:value={flipkartAffiliateToken}
+											autocomplete="new-password"
+											placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate API token'}
+											type="password"
+										/>
+									</label>
+								</div>
+							{/if}
 							<div class="mt-5 flex flex-wrap gap-3">
 								<Button
 									type="submit"
