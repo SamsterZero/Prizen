@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0-rc.1] - 2026-08-11
+
+### Added
+
+- Local price trend, volatility, time-range, and marketplace analytics with bounded history queries
+- Flipkart tracking through bounded public-page retrieval, with an optional owner-configured Affiliate
+  API integration
+- Local Operations dashboard for tracker heartbeat, scan queue, notification delivery, database
+  storage, and backup freshness
+- Additive maintenance-event migration for recording successful backups without exposing host paths
+
+### Changed
+
+- Dashboard and product analytics now handle sparse, stale, unavailable, and filtered data explicitly
+- Large dashboard metrics use compact notation such as `12.5K` and `2.3M`
+- Operations and Settings navigation is consistently available on application pages other than the
+  landing page
+- Local Compose configuration preserves the established PostgreSQL 17 data and secret volumes
+
+### Security
+
+- Operations diagnostics remain local and exclude raw errors, marketplace URLs, notification
+  destinations, tokens, credentials, and other sensitive values
+- Optional marketplace API credentials remain encrypted and no hosted intermediary is required
+
 ## [0.2.0] - 2026-08-07
 
 ### Added
@@ -33,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Reproducible Tracking MVP release acceptance and recovery checks
 - One-command production Compose deployment with persistent generated secrets and explicit migrations
 
-[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.3.0-rc.1...HEAD
+[0.3.0-rc.1]: https://github.com/SamsterZero/Prizen/compare/v0.2.0...v0.3.0-rc.1
 [0.2.0]: https://github.com/SamsterZero/Prizen/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/SamsterZero/Prizen/releases/tag/v0.1.0
