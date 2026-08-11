@@ -10,14 +10,15 @@ test('previews and persists a tracked product through the dashboard', async ({ p
 				url: productUrl,
 				currentPrice: 1499,
 				currency: 'INR',
-				availability: 'in_stock'
+				availability: 'in_stock',
+				marketplace: { slug: 'amazon', name: 'Amazon' }
 			})
 		});
 	});
 
 	await page.goto('/dashboard');
 	await page.getByRole('button', { name: 'Track product' }).first().click();
-	await page.getByLabel('Amazon product link').fill(productUrl);
+	await page.getByLabel('Amazon or Flipkart product link').fill(productUrl);
 	await page.getByRole('dialog').getByRole('button', { name: 'Track product' }).click();
 	await expect(page.getByText('Playwright tracked product')).toBeVisible();
 	await expect(page.getByLabel('Time range')).toHaveValue('30d');

@@ -51,6 +51,13 @@
 	let savingMarketplace = $state(false);
 	let marketplaceMessage = $state('');
 	let marketplaceError = $state(false);
+	let flipkartConfigured = $state(false);
+	let flipkartDataSource = $state<'html' | 'affiliate-api'>('html');
+	let flipkartAffiliateId = $state('');
+	let flipkartAffiliateToken = $state('');
+	let savingFlipkart = $state(false);
+	let flipkartMessage = $state('');
+	let flipkartError = $state(false);
 
 	async function loadChannels() {
 		loading = true;
@@ -91,6 +98,70 @@
 			marketplaceMessage =
 				exception instanceof Error ? exception.message : 'Could not load Amazon settings.';
 		}
+		try {
+			const response = await fetch('/api/settings/marketplaces/flipkart');
+			if (!response.ok) throw new Error('Could not load Flipkart settings.');
+			const settings = (await response.json()) as {
+				configured?: boolean;
+				dataSource?: 'html' | 'affiliate-api';
+			};
+			flipkartConfigured = Boolean(settings.configured);
+			flipkartDataSource = settings.dataSource ?? 'html';
+		} catch (exception) {
+			flipkartError = true;
+			flipkartMessage =
+				exception instanceof Error ? exception.message : 'Could not load Flipkart settings.';
+		}
+	}
+
+	async function saveFlipkartSettings() {
+		if (savingFlipkart) return;
+		savingFlipkart = true;
+		flipkartMessage = '';
+		flipkartError = false;
+		try {
+			const response = await fetch('/api/settings/marketplaces/flipkart', {
+				method: 'PATCH',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					dataSource: flipkartDataSource,
+					affiliateId: flipkartAffiliateId || undefined,
+					affiliateToken: flipkartAffiliateToken || undefined
+				})
+			});
+			const data = (await response.json()) as {
+				configured?: boolean;
+				dataSource?: 'html' | 'affiliate-api';
+				message?: string;
+			};
+			if (!response.ok) throw new Error(data.message ?? 'Could not save Flipkart settings.');
+			flipkartConfigured = Boolean(data.configured);
+			flipkartDataSource = data.dataSource ?? flipkartDataSource;
+			flipkartAffiliateId = '';
+			flipkartAffiliateToken = '';
+			flipkartMessage = 'Flipkart settings saved.';
+			toast.success(flipkartMessage);
+		} catch (exception) {
+			flipkartError = true;
+			flipkartMessage =
+				exception instanceof Error ? exception.message : 'Could not save Flipkart settings.';
+			toast.error(flipkartMessage);
+		} finally {
+			savingFlipkart = false;
+		}
+	}
+
+	async function removeFlipkartCredentials() {
+		const response = await fetch('/api/settings/marketplaces/flipkart', { method: 'DELETE' });
+		if (!response.ok) {
+			flipkartError = true;
+			flipkartMessage = 'Could not remove Flipkart credentials.';
+			return;
+		}
+		flipkartConfigured = false;
+		flipkartMessage = 'Flipkart Affiliate API credentials removed.';
+		flipkartError = false;
+		toast.success(flipkartMessage);
 	}
 
 	$effect(() => {
@@ -432,6 +503,91 @@
 										: 'text-emerald-700'}"
 								>
 									{marketplaceMessage}
+								</p>
+							{/if}
+						</form>
+						<form
+							class="border-b border-slate-100 p-5 sm:p-6"
+							onsubmit={(event) => {
+								event.preventDefault();
+								saveFlipkartSettings();
+							}}
+						>
+							<div class="flex items-start gap-3">
+								<span class="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+									<ShoppingBag aria-hidden="true" size={20} />
+								</span>
+								<div>
+									<div class="flex flex-wrap items-center gap-2">
+										<h3 class="font-bold">Flipkart product data</h3>
+										{#if flipkartConfigured}
+											<span
+												class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700"
+											>
+												Configured
+											</span>
+										{/if}
+									</div>
+									<p class="mt-1 max-w-2xl text-sm text-slate-500">
+										HTML mode reads one public product page without credentials. Eligible Flipkart
+										affiliates can use the official API instead.
+									</p>
+								</div>
+							</div>
+							<label class="mt-5 block max-w-md text-sm font-semibold">
+								Data source
+								<select
+									class="mt-2 w-full rounded-xl border-slate-300"
+									bind:value={flipkartDataSource}
+								>
+									<option value="html">Product page HTML (default)</option>
+									<option value="affiliate-api">Flipkart Affiliate API</option>
+								</select>
+							</label>
+							{#if flipkartDataSource === 'affiliate-api'}
+								<div class="mt-5 grid gap-4 sm:grid-cols-2">
+									<label class="text-sm font-semibold">
+										Affiliate ID
+										<input
+											class="mt-2 w-full rounded-xl border-slate-300"
+											bind:value={flipkartAffiliateId}
+											autocomplete="off"
+											placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate tracking ID'}
+										/>
+									</label>
+									<label class="text-sm font-semibold">
+										Affiliate token
+										<input
+											class="mt-2 w-full rounded-xl border-slate-300"
+											bind:value={flipkartAffiliateToken}
+											autocomplete="new-password"
+											placeholder={flipkartConfigured ? 'Stored securely' : 'Affiliate API token'}
+											type="password"
+										/>
+									</label>
+								</div>
+							{/if}
+							<div class="mt-5 flex flex-wrap gap-3">
+								<Button
+									type="submit"
+									class="h-10 bg-indigo-600 px-4 text-white hover:bg-indigo-700"
+									disabled={savingFlipkart}
+								>
+									{savingFlipkart ? 'Saving…' : 'Save Flipkart settings'}
+								</Button>
+								{#if flipkartConfigured}
+									<Button type="button" variant="outline" onclick={removeFlipkartCredentials}>
+										Remove API credentials
+									</Button>
+								{/if}
+							</div>
+							{#if flipkartMessage}
+								<p
+									class="mt-4 text-sm font-semibold {flipkartError
+										? 'text-rose-700'
+										: 'text-emerald-700'}"
+								>
+									{flipkartMessage}
 								</p>
 							{/if}
 						</form>

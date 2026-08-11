@@ -151,10 +151,17 @@
 			currentPrice?: number;
 			currency?: string;
 			message?: string;
+			marketplace?: { slug: string; name: string };
 		};
 		if (!response.ok || !data.title || !data.url || data.currentPrice === undefined)
 			throw new Error(data.message ?? 'We could not read this product page.');
-		return data as { title: string; url: string; currentPrice: number; currency: string };
+		return data as {
+			title: string;
+			url: string;
+			currentPrice: number;
+			currency: string;
+			marketplace: { slug: string; name: string };
+		};
 	}
 
 	async function addProduct() {
@@ -184,7 +191,7 @@
 						{ price: data.currentPrice, observedAt: new Date().toISOString() }
 					]),
 					analyticsRange: range,
-					marketplace: { slug: 'amazon', name: 'Amazon' },
+					marketplace: data.marketplace,
 					pollingSeconds,
 					createdAt: new Date().toISOString(),
 					targetPrice: null,
@@ -335,7 +342,7 @@
 				</h2>
 				<p class="mx-auto mt-3 max-w-md text-slate-600">
 					{marketplace === 'all'
-						? 'Paste an Amazon product link to start a new price history.'
+						? 'Paste an Amazon or Flipkart product link to start a new price history.'
 						: 'No tracked products match this marketplace filter.'}
 				</p>
 				<button
@@ -373,7 +380,7 @@
 		>
 			<div class="flex items-start justify-between gap-4">
 				<div>
-					<h2 id="add-heading" class="text-xl font-black">Track an Amazon product</h2>
+					<h2 id="add-heading" class="text-xl font-black">Track a product</h2>
 					<p class="mt-1 text-sm text-slate-500">
 						Paste the link, then choose how often the background tracker checks it.
 					</p>
@@ -386,11 +393,13 @@
 					onclick={() => (showAdd = false)}><X aria-hidden="true" size={20} /></button
 				>
 			</div>
-			<label class="mt-5 block text-sm font-semibold" for="url">Amazon product link</label><input
+			<label class="mt-5 block text-sm font-semibold" for="url"
+				>Amazon or Flipkart product link</label
+			><input
 				id="url"
 				class="mt-2 w-full rounded-xl border-slate-300 px-3 py-2.5 focus:border-indigo-500 focus:ring-indigo-500"
 				bind:value={url}
-				placeholder="https://www.amazon.in/..."
+				placeholder="https://www.flipkart.com/... or https://www.amazon.in/..."
 				type="url"
 				required
 			/>{#if addError}<p class="mt-3 text-sm font-medium text-rose-700">{addError}</p>{/if}

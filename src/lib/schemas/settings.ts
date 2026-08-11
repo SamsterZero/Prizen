@@ -50,3 +50,18 @@ export const amazonMarketplaceSettingsSchema = z
 			});
 		}
 	});
+
+export const flipkartMarketplaceSettingsSchema = z
+	.object({
+		dataSource: z.enum(['html', 'affiliate-api']),
+		affiliateId: z.string().trim().max(256).optional(),
+		affiliateToken: z.string().trim().max(2048).optional()
+	})
+	.superRefine((value, context) => {
+		if (Boolean(value.affiliateId) !== Boolean(value.affiliateToken)) {
+			context.addIssue({
+				code: 'custom',
+				message: 'Enter both the Affiliate ID and Affiliate token.'
+			});
+		}
+	});

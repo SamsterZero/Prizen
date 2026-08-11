@@ -4,6 +4,7 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	const notificationRequests: Array<Record<string, unknown>> = [];
 	let deliveryRequest: Record<string, unknown> | undefined;
 	let marketplaceRequest: Record<string, unknown> | undefined;
+	let flipkartRequest: Record<string, unknown> | undefined;
 
 	await page.route('**/api/settings', async (route) => {
 		if (route.request().method() === 'GET') {
@@ -25,6 +26,20 @@ test('settings primary actions submit their forms', async ({ page }) => {
 		await route.fulfill({
 			contentType: 'application/json',
 			body: JSON.stringify({ dataSource: 'html', creatorsConfigured: false })
+		});
+	});
+	await page.route('**/api/settings/marketplaces/flipkart', async (route) => {
+		if (route.request().method() === 'GET') {
+			await route.fulfill({
+				contentType: 'application/json',
+				body: '{"configured":false,"dataSource":"html"}'
+			});
+			return;
+		}
+		flipkartRequest = route.request().postDataJSON() as Record<string, unknown>;
+		await route.fulfill({
+			contentType: 'application/json',
+			body: '{"configured":true,"dataSource":"affiliate-api"}'
 		});
 	});
 	await page.route('**/api/notifications/channels', async (route) => {
@@ -74,4 +89,16 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	await page.getByRole('button', { name: 'Save Amazon settings' }).click();
 	await expect(page.getByText('Amazon settings saved.')).toBeVisible();
 	await expect.poll(() => marketplaceRequest).toMatchObject({ dataSource: 'html' });
+	await page.getByLabel('Data source').last().selectOption('affiliate-api');
+	await page.getByLabel('Affiliate ID').fill('owner-id');
+	await page.getByLabel('Affiliate token').fill('owner-token');
+	await page.getByRole('button', { name: 'Save Flipkart settings' }).click();
+	await expect(page.getByText('Flipkart settings saved.')).toBeVisible();
+	await expect
+		.poll(() => flipkartRequest)
+		.toEqual({
+			dataSource: 'affiliate-api',
+			affiliateId: 'owner-id',
+			affiliateToken: 'owner-token'
+		});
 });

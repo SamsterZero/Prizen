@@ -156,10 +156,11 @@ Marketplace-specific implementations belong here.
 
 - Amazon India and Amazon US through bounded HTML retrieval by default
 - Optional Amazon Creators API for eligible installation owners
+- Flipkart India through bounded HTML retrieval by default
+- Optional Flipkart Affiliate Product API for eligible installation owners
 
 Future:
 
-- Flipkart
 - Croma
 - Reliance Digital
 - Myntra

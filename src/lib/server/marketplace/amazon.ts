@@ -30,14 +30,7 @@ export type AmazonProductSnapshot = {
 	deliveryContext: 'marketplace_default';
 };
 
-export class MarketplaceFetchError extends Error {
-	constructor(
-		message: string,
-		readonly status: 422 | 429 | 502 | 503
-	) {
-		super(message);
-	}
-}
+export { MarketplaceFetchError } from './errors';
 
 type AccessToken = { value: string; expiresAt: number };
 const tokenCache = new Map<string, AccessToken>();
@@ -237,3 +230,4 @@ export async function fetchAmazonSnapshot(
 		deliveryContext: 'marketplace_default'
 	};
 }
+import { MarketplaceFetchError } from './errors';

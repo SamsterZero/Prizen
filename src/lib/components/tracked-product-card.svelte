@@ -68,7 +68,7 @@
 	<div
 		class="mt-4 grid min-w-0 gap-5 lg:grid-cols-2 xl:grid-cols-[minmax(16rem,1.3fr)_auto_minmax(17rem,1fr)_auto] xl:items-end"
 	>
-		<div class="min-w-0">
+		<div class="min-w-0 xl:self-start">
 			<button
 				class="product-title text-left text-base leading-snug font-extrabold text-slate-950 hover:text-indigo-700 md:text-lg"
 				onclick={() => window.open(product.url, '_blank', 'noopener,noreferrer')}
@@ -79,7 +79,7 @@
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
 						title="Observations in selected range"
-						><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount} in range</span
+						><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount}</span
 					>
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
