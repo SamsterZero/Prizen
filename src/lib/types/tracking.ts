@@ -1,3 +1,5 @@
+import type { AnalyticsRange, PriceAnalytics } from '$lib/modules/tracker/analytics';
+
 export type Observation = { price: number; observedAt: string };
 
 export type TrackedProduct = {
@@ -6,6 +8,9 @@ export type TrackedProduct = {
 	url: string;
 	currency: string;
 	history: Observation[];
+	analytics: PriceAnalytics;
+	analyticsRange: AnalyticsRange;
+	marketplace: { slug: string; name: string };
 	pollingSeconds: number;
 	createdAt: string;
 	targetPrice: number | null;

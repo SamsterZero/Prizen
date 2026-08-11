@@ -34,8 +34,8 @@
 			maximumFractionDigits: 0
 		})
 	);
-	const current = $derived(product.history.at(-1)?.price ?? 0);
-	const lowest = $derived(Math.min(...product.history.map((entry) => entry.price)));
+	const current = $derived(product.analytics.currentPrice);
+	const lowest = $derived(product.analytics.lowestPrice);
 	const addedAt = $derived.by(() => {
 		const minutes = Math.floor((now - new Date(product.createdAt).getTime()) / 60_000);
 		if (!Number.isFinite(minutes)) return product.createdAt;
@@ -52,7 +52,9 @@
 	class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-5 dark:bg-[#0e0e11]"
 >
 	<header class="flex w-full items-center justify-between gap-3 border-b border-slate-200 pb-3">
-		<p class="text-xs font-bold tracking-[0.14em] text-indigo-600 uppercase">Amazon</p>
+		<p class="text-xs font-bold tracking-[0.14em] text-indigo-600 uppercase">
+			{product.marketplace.name}
+		</p>
 		<Button
 			variant="ghost"
 			size="icon"
@@ -76,14 +78,13 @@
 				<div class="flex flex-wrap items-center gap-1.5 text-xs font-bold">
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-						title="Total polls"
-						><ListChecks aria-hidden="true" size={13} />{product.history.length +
-							product.failureCount}</span
+						title="Observations in selected range"
+						><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount} in range</span
 					>
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-						title="Successful polls"
-						><CircleCheck aria-hidden="true" size={13} />{product.history.length}</span
+						title="Successful observations in selected range"
+						><CircleCheck aria-hidden="true" size={13} />{product.analytics.observationCount}</span
 					>
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-1 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
@@ -97,7 +98,7 @@
 
 		<div class="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2 xl:block">
 			<p class="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-				{money.format(current)}
+				{current === null ? 'No price' : money.format(current)}
 			</p>
 			<span
 				class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold xl:mt-2 {product.availability ===
@@ -113,8 +114,18 @@
 						? 'Availability unknown'
 						: 'In stock'}
 			</span>
-			<p class="text-sm font-bold text-emerald-600 xl:mt-2">
-				Lowest seen {money.format(lowest)}
+			{#if lowest !== null}
+				<p class="text-sm font-bold text-emerald-600 xl:mt-2">Lowest {money.format(lowest)}</p>
+			{/if}
+			<p class="mt-1 text-xs font-semibold text-slate-500">
+				{product.analytics.changePercent === null
+					? product.analytics.observationCount === 0
+						? 'No observations in this range'
+						: 'More observations needed for a trend'
+					: `${product.analytics.changePercent > 0 ? '+' : ''}${product.analytics.changePercent.toFixed(1)}% trend`}
+				{#if product.analytics.volatilityPercent !== null}
+					· {product.analytics.volatilityPercent.toFixed(1)}% volatility
+				{/if}
 			</p>
 		</div>
 

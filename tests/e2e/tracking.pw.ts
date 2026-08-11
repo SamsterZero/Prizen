@@ -20,13 +20,27 @@ test('previews and persists a tracked product through the dashboard', async ({ p
 	await page.getByLabel('Amazon product link').fill(productUrl);
 	await page.getByRole('dialog').getByRole('button', { name: 'Track product' }).click();
 	await expect(page.getByText('Playwright tracked product')).toBeVisible();
+	await expect(page.getByLabel('Time range')).toHaveValue('30d');
+	await page.getByLabel('Time range').selectOption('7d');
+	await expect(page).toHaveURL(/range=7d/);
 
-	const response = await page.request.get('/api/tracking');
+	const response = await page.request.get('/api/tracking?range=7d&marketplace=amazon');
 	expect(response.ok()).toBe(true);
-	const products = (await response.json()) as Array<{ title: string; url: string }>;
+	expect(response.headers()['x-prizen-result-limit']).toBe('100');
+	const products = (await response.json()) as Array<{
+		title: string;
+		url: string;
+		analyticsRange: string;
+		analytics: { observationCount: number };
+	}>;
 	expect(products).toEqual(
 		expect.arrayContaining([
-			expect.objectContaining({ title: 'Playwright tracked product', url: productUrl })
+			expect.objectContaining({
+				title: 'Playwright tracked product',
+				url: productUrl,
+				analyticsRange: '7d',
+				analytics: expect.objectContaining({ observationCount: expect.any(Number) })
+			})
 		])
 	);
 });
