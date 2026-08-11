@@ -7,8 +7,14 @@
 	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { pollingOptions, type TrackedProduct as Product } from '$lib/types/tracking';
+	import {
+		analyticsRanges,
+		calculatePriceAnalytics,
+		type AnalyticsRange
+	} from '$lib/modules/tracker/analytics';
 	import { Bell, Plus, Settings, Trash2, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -25,6 +31,10 @@
 	let pollingSeconds = $state(900);
 	let now = $state(Date.now());
 	let page = $state(1);
+	let range = $state<AnalyticsRange>('30d');
+	let marketplace = $state('all');
+	let marketplaceOptions = $state<{ slug: string; name: string }[]>([]);
+	let usingCachedData = $state(false);
 	const pageCount = $derived(Math.max(1, Math.ceil(products.length / pageSize)));
 	const visibleProducts = $derived(products.slice((page - 1) * pageSize, page * pageSize));
 
@@ -48,7 +58,8 @@
 				typeof legacy.createdAt === 'string' && !Number.isNaN(new Date(legacy.createdAt).getTime())
 					? legacy.createdAt
 					: (history[0]?.observedAt ?? 'Added earlier');
-			return history.length > 0
+			const analytics = legacy.analytics ?? calculatePriceAnalytics(history);
+			return analytics.currentPrice !== null || history.length > 0
 				? [
 						{
 							id: legacy.id,
@@ -56,6 +67,9 @@
 							url: legacy.url,
 							currency: legacy.currency ?? 'INR',
 							history,
+							analytics,
+							analyticsRange: legacy.analyticsRange ?? range,
+							marketplace: legacy.marketplace ?? { slug: 'amazon', name: 'Amazon' },
 							pollingSeconds:
 								typeof legacy.pollingSeconds === 'number' ? legacy.pollingSeconds : 900,
 							createdAt,
@@ -72,15 +86,39 @@
 	}
 	async function loadPersistedProducts() {
 		try {
-			const response = await fetch('/api/tracking');
+			const params = new SvelteURLSearchParams({ range });
+			if (marketplace !== 'all') params.set('marketplace', marketplace);
+			const response = await fetch(`/api/tracking?${params}`);
 			if (!response.ok) return;
-			products = normalizeProducts(await response.json());
+			const loaded = normalizeProducts(await response.json());
+			products = loaded;
+			usingCachedData = false;
+			if (marketplace === 'all' || marketplaceOptions.length === 0) {
+				marketplaceOptions = [
+					...new Map(
+						loaded.map((product) => [product.marketplace.slug, product.marketplace])
+					).values()
+				];
+			}
 		} catch {
-			/* Local history remains available while the server is starting or unavailable. */
+			usingCachedData = products.length > 0;
 		}
+	}
+	function applyFilters() {
+		page = 1;
+		const params = new SvelteURLSearchParams();
+		params.set('range', range);
+		if (marketplace !== 'all') params.set('marketplace', marketplace);
+		window.history.replaceState(window.history.state, '', `/dashboard?${params}`);
+		void loadPersistedProducts();
 	}
 
 	onMount(() => {
+		const params = new SvelteURLSearchParams(window.location.search);
+		const requestedRange = params.get('range');
+		if (requestedRange && requestedRange in analyticsRanges)
+			range = requestedRange as AnalyticsRange;
+		marketplace = params.get('marketplace') || 'all';
 		const saved = localStorage.getItem(key);
 		if (saved !== null)
 			try {
@@ -142,6 +180,11 @@
 					url: data.url,
 					currency: data.currency ?? 'INR',
 					history: [{ price: data.currentPrice, observedAt: new Date().toISOString() }],
+					analytics: calculatePriceAnalytics([
+						{ price: data.currentPrice, observedAt: new Date().toISOString() }
+					]),
+					analyticsRange: range,
+					marketplace: { slug: 'amazon', name: 'Amazon' },
 					pollingSeconds,
 					createdAt: new Date().toISOString(),
 					targetPrice: null,
@@ -245,12 +288,55 @@
 				>
 			</div>
 		</div>
+		<div
+			class="mt-5 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+		>
+			<label class="text-sm font-semibold text-slate-700">
+				<span class="mb-1.5 block text-xs font-bold tracking-wide text-slate-500 uppercase"
+					>Time range</span
+				>
+				<select
+					class="h-10 rounded-lg border-slate-300 bg-slate-50 pr-9 text-sm font-semibold"
+					bind:value={range}
+					onchange={applyFilters}
+				>
+					{#each Object.entries(analyticsRanges) as [value, option] (value)}
+						<option {value}>{option.label}</option>
+					{/each}
+				</select>
+			</label>
+			<label class="text-sm font-semibold text-slate-700">
+				<span class="mb-1.5 block text-xs font-bold tracking-wide text-slate-500 uppercase"
+					>Marketplace</span
+				>
+				<select
+					class="h-10 rounded-lg border-slate-300 bg-slate-50 pr-9 text-sm font-semibold"
+					bind:value={marketplace}
+					onchange={applyFilters}
+				>
+					<option value="all">All marketplaces</option>
+					{#each marketplaceOptions as option (option.slug)}
+						<option value={option.slug}>{option.name}</option>
+					{/each}
+				</select>
+			</label>
+			<p class="pb-2 text-xs text-slate-500">Analytics use observations from the selected range.</p>
+		</div>
+		{#if usingCachedData}
+			<p class="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+				The server is unavailable. Showing cached local data, which may be stale.
+			</p>
+		{/if}
 		{#if products.length === 0}<section
 				class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
 			>
-				<h2 class="text-2xl font-black">Your list is clear.</h2>
+				<h2 class="text-2xl font-black">
+					{marketplace === 'all' ? 'Your list is clear.' : 'No matching products.'}
+				</h2>
 				<p class="mx-auto mt-3 max-w-md text-slate-600">
-					Paste an Amazon product link to start a new price history.
+					{marketplace === 'all'
+						? 'Paste an Amazon product link to start a new price history.'
+						: 'No tracked products match this marketplace filter.'}
 				</p>
 				<button
 					class="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"

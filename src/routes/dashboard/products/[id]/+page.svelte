@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, CircleCheck, CircleX, ExternalLink, ListChecks } from '@lucide/svelte';
 	import type { PageProps } from './$types';
+	import { analyticsRanges, type AnalyticsRange } from '$lib/modules/tracker/analytics';
 
 	let { data }: PageProps = $props();
 	const product = $derived(data.product);
@@ -16,8 +17,12 @@
 			maximumFractionDigits: 0
 		})
 	);
-	const current = $derived(product.history.at(-1)?.price ?? 0);
-	const lowest = $derived(Math.min(...product.history.map((entry) => entry.price)));
+	const current = $derived(product.analytics.currentPrice);
+	const lowest = $derived(product.analytics.lowestPrice);
+	function changeRange(value: string) {
+		const range = value as AnalyticsRange;
+		window.location.assign(`${window.location.pathname}?range=${range}`);
+	}
 	const pollingLabel = $derived(
 		product.pollingSeconds < 60
 			? `${product.pollingSeconds} seconds`
@@ -58,17 +63,37 @@
 		</div>
 
 		<section class="mt-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-			<p class="text-xs font-bold tracking-[0.14em] text-indigo-600 uppercase">Amazon</p>
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<p class="text-xs font-bold tracking-[0.14em] text-indigo-600 uppercase">
+					{product.marketplace.name}
+				</p>
+				<label class="text-xs font-bold text-slate-500">
+					<span class="mr-2">Analytics range</span>
+					<select
+						class="h-9 rounded-lg border-slate-300 bg-slate-50 pr-8 text-sm font-semibold text-slate-700"
+						value={product.analyticsRange}
+						onchange={(event) => changeRange(event.currentTarget.value)}
+					>
+						{#each Object.entries(analyticsRanges) as [value, option] (value)}
+							<option {value}>{option.label}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
 			<h1 class="mt-2 w-full text-2xl font-black tracking-tight md:text-3xl">{product.title}</h1>
 
 			<div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
 				<div class="rounded-xl bg-slate-50 p-4">
 					<p class="text-xs font-semibold text-slate-500">Current price</p>
-					<p class="mt-1 text-2xl font-black">{money.format(current)}</p>
+					<p class="mt-1 text-2xl font-black">
+						{current === null ? 'No data' : money.format(current)}
+					</p>
 				</div>
 				<div class="rounded-xl bg-slate-50 p-4">
 					<p class="text-xs font-semibold text-slate-500">Lowest seen</p>
-					<p class="mt-1 text-lg font-black text-emerald-600">{money.format(lowest)}</p>
+					<p class="mt-1 text-lg font-black text-emerald-600">
+						{lowest === null ? 'No data' : money.format(lowest)}
+					</p>
 				</div>
 				<div class="rounded-xl bg-slate-50 p-4">
 					<p class="text-xs font-semibold text-slate-500">Target price</p>
@@ -102,22 +127,40 @@
 			<div class="mt-6 flex flex-wrap items-center gap-2 text-xs font-bold">
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-					><ListChecks aria-hidden="true" size={13} />{product.history.length +
-						product.failureCount} total polls</span
+					><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount} observations
+					in range</span
 				>
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
-					><CircleCheck aria-hidden="true" size={13} />{product.history.length} successful</span
+					><CircleCheck aria-hidden="true" size={13} />{product.analytics.observationCount} successful</span
 				>
 				<span
 					class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-1 text-rose-700 dark:bg-rose-950 dark:text-rose-300"
 					><CircleX aria-hidden="true" size={13} />{product.failureCount} failed</span
 				>
 			</div>
+			<div class="mt-4 grid gap-3 sm:grid-cols-2">
+				<div class="rounded-xl border border-slate-200 p-4">
+					<p class="text-xs font-semibold text-slate-500">Price trend</p>
+					<p class="mt-1 text-lg font-black">
+						{product.analytics.changePercent === null
+							? 'Not enough data'
+							: `${product.analytics.changePercent > 0 ? '+' : ''}${product.analytics.changePercent.toFixed(1)}%`}
+					</p>
+				</div>
+				<div class="rounded-xl border border-slate-200 p-4">
+					<p class="text-xs font-semibold text-slate-500">Price volatility</p>
+					<p class="mt-1 text-lg font-black">
+						{product.analytics.volatilityPercent === null
+							? 'Needs 3 observations'
+							: `${product.analytics.volatilityPercent.toFixed(1)}%`}
+					</p>
+				</div>
+			</div>
 		</section>
 
 		<section class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-			<PriceHistoryChart observations={product.history} large />
+			<PriceHistoryChart observations={product.history} range={product.analyticsRange} large />
 		</section>
 	</main>
 </div>

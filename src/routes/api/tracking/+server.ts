@@ -1,5 +1,5 @@
 import { error, json } from '@sveltejs/kit';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, gte, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import {
 	latestPrices,
@@ -9,9 +9,23 @@ import {
 	scanJobs
 } from '$lib/server/db/schema';
 import { availabilityIsStale } from '$lib/server/availability';
+import {
+	analyticsRanges,
+	analyticsDateToISOString,
+	parseAnalyticsRange,
+	rangeCutoff,
+	type PriceAnalytics
+} from '$lib/modules/tracker/analytics';
 
-export async function GET({ locals }) {
+export async function GET({ locals, url }) {
 	if (!locals.user) throw error(401, 'Authentication required.');
+	const range = parseAnalyticsRange(url.searchParams.get('range'));
+	const marketplaceFilter = url.searchParams.get('marketplace')?.trim() || null;
+	const cutoff = rangeCutoff(range);
+	const productWhere = and(
+		eq(products.userId, locals.user.id),
+		marketplaceFilter ? eq(marketplaces.slug, marketplaceFilter) : undefined
+	);
 	const rows = await db
 		.select({
 			id: products.id,
@@ -21,36 +35,64 @@ export async function GET({ locals }) {
 			targetPrice: products.targetPrice,
 			pollingSeconds: products.pollingIntervalSeconds,
 			createdAt: products.createdAt,
-			price: priceHistory.price,
+			marketplaceSlug: marketplaces.slug,
+			marketplaceName: marketplaces.name,
 			availability: latestPrices.availability,
 			availabilityObservedAt: latestPrices.observedAt,
 			scanStatus: scanJobs.status,
-			failureCount: scanJobs.failureCount,
-			observedAt: priceHistory.observedAt
+			failureCount: scanJobs.failureCount
 		})
 		.from(products)
-		.leftJoin(priceHistory, eq(priceHistory.productId, products.id))
+		.innerJoin(marketplaces, eq(marketplaces.id, products.marketplaceId))
 		.leftJoin(latestPrices, eq(latestPrices.productId, products.id))
 		.leftJoin(scanJobs, eq(scanJobs.productId, products.id))
-		.where(eq(products.userId, locals.user.id))
-		.orderBy(asc(products.createdAt), asc(priceHistory.observedAt));
-	const grouped = new Map<
-		string,
-		{
-			id: string;
-			title: string;
-			url: string;
-			currency: string;
-			targetPrice: number | null;
-			pollingSeconds: number;
-			createdAt: string;
-			availability: 'in_stock' | 'out_of_stock' | 'unknown';
-			failureCount: number;
-			history: { price: number; observedAt: string }[];
-		}
-	>();
+		.where(productWhere)
+		.orderBy(asc(products.createdAt))
+		.limit(100);
+
+	const summaries = await db
+		.select({
+			productId: priceHistory.productId,
+			firstPrice: sql<string>`(array_agg(${priceHistory.price} order by ${priceHistory.observedAt} asc))[1]`,
+			currentPrice: sql<string>`(array_agg(${priceHistory.price} order by ${priceHistory.observedAt} desc))[1]`,
+			lowestPrice: sql<string>`min(${priceHistory.price})`,
+			highestPrice: sql<string>`max(${priceHistory.price})`,
+			averagePrice: sql<string>`avg(${priceHistory.price})`,
+			volatility: sql<string | null>`stddev_pop(${priceHistory.price})`,
+			observationCount: sql<number>`count(*)::integer`,
+			lastObservedAt: sql<Date>`max(${priceHistory.observedAt})`
+		})
+		.from(priceHistory)
+		.innerJoin(products, eq(products.id, priceHistory.productId))
+		.innerJoin(marketplaces, eq(marketplaces.id, products.marketplaceId))
+		.where(and(productWhere, gte(priceHistory.observedAt, cutoff)))
+		.groupBy(priceHistory.productId);
+	const summaryByProduct = new Map(summaries.map((summary) => [summary.productId, summary]));
+
+	const result = [];
 	for (const row of rows) {
-		const product = grouped.get(row.id) ?? {
+		const summary = summaryByProduct.get(row.id);
+		const firstPrice = summary ? Number(summary.firstPrice) : null;
+		const currentPrice = summary ? Number(summary.currentPrice) : null;
+		const averagePrice = summary ? Number(summary.averagePrice) : null;
+		const analytics: PriceAnalytics = {
+			firstPrice,
+			currentPrice,
+			lowestPrice: summary ? Number(summary.lowestPrice) : null,
+			highestPrice: summary ? Number(summary.highestPrice) : null,
+			averagePrice,
+			changePercent:
+				summary && summary.observationCount >= 2 && firstPrice !== 0
+					? ((currentPrice! - firstPrice!) / firstPrice!) * 100
+					: null,
+			volatilityPercent:
+				summary && summary.observationCount >= 3 && averagePrice !== 0
+					? (Number(summary.volatility) / averagePrice!) * 100
+					: null,
+			observationCount: summary?.observationCount ?? 0,
+			lastObservedAt: analyticsDateToISOString(summary?.lastObservedAt)
+		};
+		result.push({
 			id: row.id,
 			title: row.title,
 			url: row.url,
@@ -58,6 +100,9 @@ export async function GET({ locals }) {
 			targetPrice: row.targetPrice === null ? null : Number(row.targetPrice),
 			pollingSeconds: row.pollingSeconds,
 			createdAt: row.createdAt.toISOString(),
+			marketplace: { slug: row.marketplaceSlug, name: row.marketplaceName },
+			analytics,
+			analyticsRange: range,
 			availability: availabilityIsStale(
 				row.scanStatus,
 				row.availabilityObservedAt,
@@ -67,13 +112,14 @@ export async function GET({ locals }) {
 				: (row.availability ?? 'unknown'),
 			failureCount: row.failureCount ?? 0,
 			history: []
-		};
-		if (row.price !== null && row.observedAt !== null) {
-			product.history.push({ price: Number(row.price), observedAt: row.observedAt.toISOString() });
-		}
-		grouped.set(row.id, product);
+		});
 	}
-	return json([...grouped.values()]);
+	return json(result, {
+		headers: {
+			'x-prizen-analytics-range': analyticsRanges[range].label,
+			'x-prizen-result-limit': '100'
+		}
+	});
 }
 
 export async function POST({ request, locals }) {

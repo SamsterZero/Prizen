@@ -1,11 +1,27 @@
+name: prizen-local
+
 services:
+  init:
+    image: prizen:local
+    pull_policy: never
+    build: .
+    restart: 'no'
+    entrypoint: ['bun', 'scripts/init-secrets.ts']
+    environment:
+      PRIZEN_DATABASE_PASSWORD: ${PRIZEN_DATABASE_PASSWORD:-}
+    volumes:
+      - prizen_secrets:/run/secrets/prizen
+
   migrate:
     image: prizen:local
     pull_policy: never
     build: .
     command: bun run db:migrate
     environment:
-      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
+    volumes:
+      - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
       db:
         condition: service_healthy
@@ -18,10 +34,13 @@ services:
     ports:
       - 127.0.0.1:3000:3000
     environment:
-      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
-      ORIGIN: http://localhost:3000
+      ORIGIN: ${ORIGIN:-http://localhost:3000}
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
       TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
+    volumes:
+      - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -43,36 +62,44 @@ services:
     restart: unless-stopped
     command: bun scripts/tracker.ts
     environment:
-      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
       APP_URL: http://app:3000
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
       TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
+    volumes:
+      - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
       app:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'bun', 'scripts/tracker-health.ts']
+      test: ['CMD', '/app/scripts/container-entrypoint.sh', 'bun', 'scripts/tracker-health.ts']
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 60s
   db:
-    image: postgres
+    image: postgres:17-alpine
     restart: always
     ports:
       - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: local
+      POSTGRES_USER: ${PRIZEN_DB_USER:-prizen}
+      POSTGRES_PASSWORD_FILE: /run/secrets/prizen/database-password
+      POSTGRES_DB: ${PRIZEN_DB_NAME:-prizen}
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
+      - prizen_secrets:/run/secrets/prizen:ro
+    depends_on:
+      init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U root -d local']
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5
 volumes:
   pgdata:
+  prizen_secrets:
