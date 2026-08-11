@@ -79,7 +79,7 @@
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
 						title="Observations in selected range"
-						><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount} in range</span
+						><ListChecks aria-hidden="true" size={13} />{product.analytics.observationCount}</span
 					>
 					<span
 						class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"
