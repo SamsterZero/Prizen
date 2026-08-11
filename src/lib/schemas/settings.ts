@@ -50,3 +50,8 @@ export const amazonMarketplaceSettingsSchema = z
 			});
 		}
 	});
+
+export const flipkartMarketplaceSettingsSchema = z.object({
+	affiliateId: z.string().trim().min(1, 'Affiliate ID is required.').max(256),
+	affiliateToken: z.string().trim().min(1, 'Affiliate token is required.').max(2048)
+});

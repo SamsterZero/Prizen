@@ -16,6 +16,8 @@ import {
 	rangeCutoff,
 	type PriceAnalytics
 } from '$lib/modules/tracker/analytics';
+import { isAmazonUrl } from '$lib/server/marketplace/amazon-adapter';
+import { flipkartProductId, isFlipkartUrl } from '$lib/server/marketplace/flipkart';
 
 export async function GET({ locals, url }) {
 	if (!locals.user) throw error(401, 'Authentication required.');
@@ -142,15 +144,21 @@ export async function POST({ request, locals }) {
 	}
 
 	try {
-		await db
-			.insert(marketplaces)
-			.values({ slug: 'amazon', name: 'Amazon', websiteUrl: 'https://www.amazon.in/' })
-			.onConflictDoNothing();
+		const productUrl = new URL(body.url);
+		const isFlipkart = isFlipkartUrl(productUrl);
+		if (!isFlipkart && !isAmazonUrl(productUrl)) throw error(422, 'Unsupported marketplace URL.');
+		if (isFlipkart && body.currency !== 'INR') throw error(422, 'Flipkart prices must use INR.');
+		const marketplaceDefinition = isFlipkart
+			? { slug: 'flipkart', name: 'Flipkart', websiteUrl: 'https://www.flipkart.com/' }
+			: { slug: 'amazon', name: 'Amazon', websiteUrl: 'https://www.amazon.in/' };
+		await db.insert(marketplaces).values(marketplaceDefinition).onConflictDoNothing();
 		const marketplace = await db.query.marketplaces.findFirst({
-			where: eq(marketplaces.slug, 'amazon')
+			where: eq(marketplaces.slug, marketplaceDefinition.slug)
 		});
-		if (!marketplace) throw error(500, 'Amazon marketplace configuration is unavailable.');
-		const externalId = new URL(body.url).pathname.match(/\/dp\/([A-Z0-9]{10})/i)?.[1] ?? body.url;
+		if (!marketplace) throw error(500, 'Marketplace configuration is unavailable.');
+		const externalId = isFlipkart
+			? (flipkartProductId(productUrl) ?? body.url)
+			: (productUrl.pathname.match(/\/dp\/([A-Z0-9]{10})/i)?.[1] ?? body.url);
 		const existing = await db.query.products.findFirst({
 			where: and(eq(products.url, body.url), eq(products.userId, locals.user.id))
 		});

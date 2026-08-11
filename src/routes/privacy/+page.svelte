@@ -60,17 +60,17 @@
 						approved product and offer data through supported marketplace APIs. It may also send
 						test messages and alerts through Discord or Telegram. Those services receive the
 						information necessary to fulfil each request and apply their own privacy terms. Delivery
-						pincodes are not sent by either Amazon tracking mode.
+						pincodes are not sent by Amazon or Flipkart tracking.
 					</p>
 				</section>
 				<section>
 					<h2 class="text-xl font-black text-slate-950">Credentials and payments</h2>
 					<p class="mt-2">
-						Discord webhook URLs and Telegram bot credentials are encrypted before being stored.
-						Keep your encryption key private and backed up. Prizen does not currently collect card
-						details or marketplace passwords. Future Buy Assist connections are intended to keep
-						marketplace cookies, passwords, addresses, and payment instruments inside the user's
-						browser and marketplace account.
+						Marketplace API credentials, Discord webhook URLs, and Telegram bot credentials are
+						encrypted before being stored. Keep your encryption key private and backed up. Prizen
+						does not currently collect card details or marketplace passwords. Future Buy Assist
+						connections are intended to keep marketplace cookies, passwords, addresses, and payment
+						instruments inside the user's browser and marketplace account.
 					</p>
 				</section>
 				<section>

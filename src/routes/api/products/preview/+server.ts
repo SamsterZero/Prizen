@@ -11,6 +11,11 @@ import {
 	isAmazonUrl,
 	MarketplaceFetchError
 } from '$lib/server/marketplace/amazon-adapter';
+import {
+	fetchFlipkartSnapshot,
+	isFlipkartUrl,
+	type FlipkartAffiliateConfig
+} from '$lib/server/marketplace/flipkart';
 
 export async function POST({ request, fetch, locals, getClientAddress }) {
 	const internalTracker =
@@ -29,16 +34,17 @@ export async function POST({ request, fetch, locals, getClientAddress }) {
 	} catch {
 		throw error(400, 'Enter a valid product URL.');
 	}
-	if (!isAmazonUrl(url)) {
-		throw error(422, 'Only Amazon India and Amazon US links are supported right now.');
+	if (!isAmazonUrl(url) && !isFlipkartUrl(url)) {
+		throw error(422, 'Use an Amazon India, Amazon US, or Flipkart product link.');
 	}
 	const ownerUserId =
 		locals.user?.id ?? (typeof body.userId === 'string' ? body.userId : undefined);
 	if (!ownerUserId) throw error(400, 'The tracker request is missing its product owner.');
+	const marketplaceSlug = isFlipkartUrl(url) ? 'flipkart' : 'amazon';
 	const configuration = await db.query.marketplaceConfigurations.findFirst({
 		where: and(
 			eq(marketplaceConfigurations.userId, ownerUserId),
-			eq(marketplaceConfigurations.marketplaceSlug, 'amazon')
+			eq(marketplaceConfigurations.marketplaceSlug, marketplaceSlug)
 		),
 		columns: { dataSource: true, secretReference: true }
 	});
@@ -55,12 +61,33 @@ export async function POST({ request, fetch, locals, getClientAddress }) {
 		}
 	}
 	try {
-		return json(
-			await fetchAmazonSnapshot(url, fetch, {
+		if (marketplaceSlug === 'flipkart') {
+			if (!configuration?.secretReference) {
+				throw new MarketplaceFetchError('Configure Flipkart Affiliate API credentials first.', 503);
+			}
+			let affiliate: FlipkartAffiliateConfig;
+			try {
+				affiliate = JSON.parse(
+					decryptSecret(configuration.secretReference)
+				) as FlipkartAffiliateConfig;
+			} catch {
+				throw new MarketplaceFetchError(
+					'The encrypted Flipkart Affiliate API configuration is invalid.',
+					503
+				);
+			}
+			return json({
+				...(await fetchFlipkartSnapshot(url, fetch, affiliate)),
+				marketplace: { slug: 'flipkart', name: 'Flipkart' }
+			});
+		}
+		return json({
+			...(await fetchAmazonSnapshot(url, fetch, {
 				dataSource: configuration?.dataSource,
 				creators
-			})
-		);
+			})),
+			marketplace: { slug: 'amazon', name: 'Amazon' }
+		});
 	} catch (exception) {
 		if (exception instanceof MarketplaceFetchError)
 			throw error(exception.status, exception.message);
