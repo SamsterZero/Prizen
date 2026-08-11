@@ -68,7 +68,7 @@
 	<div
 		class="mt-4 grid min-w-0 gap-5 lg:grid-cols-2 xl:grid-cols-[minmax(16rem,1.3fr)_auto_minmax(17rem,1fr)_auto] xl:items-end"
 	>
-		<div class="min-w-0">
+		<div class="min-w-0 xl:self-start">
 			<button
 				class="product-title text-left text-base leading-snug font-extrabold text-slate-950 hover:text-indigo-700 md:text-lg"
 				onclick={() => window.open(product.url, '_blank', 'noopener,noreferrer')}
