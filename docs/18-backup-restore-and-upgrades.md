@@ -16,6 +16,15 @@ it.
 bash scripts/backup-release.sh ./backups
 ```
 
+After the dump, secrets archive, and checksums complete, the script records a successful local
+maintenance event. The Operations dashboard uses that marker to report backup freshness without
+mounting the host backup directory into the application container. Backups created by other tools
+are not visible there. A restored dump contains the marker from the preceding successful backup;
+create a new verified backup after restoration to refresh the dashboard status.
+
+See the [Operations dashboard reference](20-operations-dashboard.md) for freshness thresholds and
+the meaning of each local health metric.
+
 The command creates a private, timestamped directory containing a PostgreSQL custom-format dump,
 the secrets archive, metadata, and SHA-256 checksums. Copy the complete directory to encrypted,
 owner-controlled storage. Never commit it, upload it to an issue, or store it beside the only Prizen

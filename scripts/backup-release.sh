@@ -41,5 +41,8 @@ EOF
 	sha256sum database.dump secrets.tar metadata.txt > SHA256SUMS
 )
 
+"${compose[@]}" exec -T db psql -v ON_ERROR_STOP=1 -U "$database_user" -d "$database_name" \
+	-c "INSERT INTO maintenance_events (kind, status) VALUES ('backup', 'succeeded');" >/dev/null
+
 echo "Backup complete: $backup_dir"
 echo 'Store this directory encrypted and separately from the Prizen host.'

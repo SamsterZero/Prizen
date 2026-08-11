@@ -208,6 +208,18 @@ export const trackerHeartbeats = pgTable('tracker_heartbeats', {
 	lastError: text('last_error')
 });
 
+/** Local maintenance markers make owner-run backup freshness visible without host filesystem access. */
+export const maintenanceEvents = pgTable(
+	'maintenance_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		kind: varchar('kind', { length: 48 }).notNull(),
+		status: varchar('status', { length: 24 }).notNull(),
+		occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(table) => [index('maintenance_events_kind_occurred_at_idx').on(table.kind, table.occurredAt)]
+);
+
 export const notificationChannels = pgTable('notification_channels', {
 	id: uuid('id').defaultRandom().primaryKey(),
 	userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
