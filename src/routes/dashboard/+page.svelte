@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { resolve } from '$app/paths';
-	import LogoMark from '$lib/components/logo-mark.svelte';
+	import AppNav from '$lib/components/app-nav.svelte';
 	import TrackedProductCard from '$lib/components/tracked-product-card.svelte';
 	import ProductPagination from '$lib/components/product-pagination.svelte';
-	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { pollingOptions, type TrackedProduct as Product } from '$lib/types/tracking';
 	import {
@@ -12,7 +11,7 @@
 		calculatePriceAnalytics,
 		type AnalyticsRange
 	} from '$lib/modules/tracker/analytics';
-	import { Activity, Bell, Plus, Settings, Trash2, X } from '@lucide/svelte';
+	import { Plus, Trash2, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
@@ -249,40 +248,7 @@
 
 <svelte:head><title>Dashboard — Prizen</title></svelte:head>
 <div class="app-surface min-h-screen bg-[#f8f9ff] text-slate-950">
-	<header class="dashboard-nav border-b border-slate-200 bg-white">
-		<div class="page-shell flex items-center justify-between py-4">
-			<a class="flex items-center gap-2 text-xl font-black tracking-tight" href={resolve('/')}>
-				<LogoMark />Prizen
-			</a>
-			<div class="flex items-center gap-3">
-				<ThemeToggle />
-				<Button
-					href={resolve('/operations')}
-					variant="outline"
-					size="icon-lg"
-					class="border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-					aria-label="Operations"
-					title="Operations"><Activity aria-hidden="true" size={18} /></Button
-				>
-				<Button
-					href={resolve('/settings')}
-					variant="outline"
-					size="icon-lg"
-					class="border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-					aria-label="Notification integrations"
-					title="Notification integrations"><Bell aria-hidden="true" size={18} /></Button
-				>
-				<Button
-					href={resolve('/settings')}
-					variant="outline"
-					size="icon-lg"
-					class="border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-					aria-label="Settings"
-					title="Settings"><Settings aria-hidden="true" size={18} /></Button
-				>
-			</div>
-		</div>
-	</header>
+	<AppNav />
 	<main class="page-shell py-7">
 		<div class="flex flex-wrap items-end justify-between gap-4">
 			<div>

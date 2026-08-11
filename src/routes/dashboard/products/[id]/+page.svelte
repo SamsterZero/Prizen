@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import LogoMark from '$lib/components/logo-mark.svelte';
+	import AppNav from '$lib/components/app-nav.svelte';
 	import PriceHistoryChart from '$lib/components/price-history-chart.svelte';
-	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { ArrowLeft, CircleCheck, CircleX, ExternalLink, ListChecks } from '@lucide/svelte';
 	import type { PageProps } from './$types';
@@ -37,15 +36,7 @@
 </svelte:head>
 
 <div class="app-surface min-h-screen bg-[#f8f9ff] text-slate-950">
-	<header class="dashboard-nav border-b border-slate-200 bg-white">
-		<div class="page-shell flex items-center justify-between py-4">
-			<a class="flex items-center gap-2 text-xl font-black tracking-tight" href={resolve('/')}>
-				<LogoMark />
-				Prizen
-			</a>
-			<ThemeToggle />
-		</div>
-	</header>
+	<AppNav />
 
 	<main class="page-shell py-7">
 		<div class="flex items-center justify-between gap-3">

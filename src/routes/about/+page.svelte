@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import LogoMark from '$lib/components/logo-mark.svelte';
-	import ThemeToggle from '$lib/components/theme-toggle.svelte';
-	import { Button } from '$lib/components/ui/button';
+	import AppNav from '$lib/components/app-nav.svelte';
 	import { BellRing, ChartNoAxesCombined, LockKeyhole, ShoppingBag } from '@lucide/svelte';
 </script>
 
@@ -12,20 +10,7 @@
 </svelte:head>
 
 <div class="app-surface min-h-screen bg-[#f8f9ff] text-slate-950">
-	<header class="border-b border-slate-200 bg-white">
-		<div class="page-shell flex items-center justify-between py-4">
-			<a class="flex items-center gap-2 text-xl font-black tracking-tight" href={resolve('/')}>
-				<LogoMark />
-				Prizen
-			</a>
-			<div class="flex items-center gap-2">
-				<ThemeToggle />
-				<Button href={resolve('/dashboard')} class="bg-indigo-600 text-white hover:bg-indigo-700"
-					>Open dashboard</Button
-				>
-			</div>
-		</div>
-	</header>
+	<AppNav />
 
 	<main class="page-shell py-12 sm:py-16">
 		<section class="max-w-3xl">
