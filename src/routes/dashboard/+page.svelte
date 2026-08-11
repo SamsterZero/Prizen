@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { resolve } from '$app/paths';
 	import AppNav from '$lib/components/app-nav.svelte';
 	import TrackedProductCard from '$lib/components/tracked-product-card.svelte';
 	import ProductPagination from '$lib/components/product-pagination.svelte';
