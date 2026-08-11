@@ -12,7 +12,7 @@
 		calculatePriceAnalytics,
 		type AnalyticsRange
 	} from '$lib/modules/tracker/analytics';
-	import { Bell, Plus, Settings, Trash2, X } from '@lucide/svelte';
+	import { Activity, Bell, Plus, Settings, Trash2, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import type { PageProps } from './$types';
@@ -256,6 +256,14 @@
 			</a>
 			<div class="flex items-center gap-3">
 				<ThemeToggle />
+				<Button
+					href={resolve('/operations')}
+					variant="outline"
+					size="icon-lg"
+					class="border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+					aria-label="Operations"
+					title="Operations"><Activity aria-hidden="true" size={18} /></Button
+				>
 				<Button
 					href={resolve('/settings')}
 					variant="outline"

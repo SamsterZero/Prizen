@@ -34,7 +34,7 @@ GitHub issues are the source of truth for actionable work, and the [Prizen Roadm
 
 - [ ] Trend analytics and filtering
 - [ ] Second compliant marketplace adapter
-- [ ] Local operations dashboard
+- [x] Local operations dashboard
 - [ ] Retention and storage visibility
 
 ## v1.0.0 — Production Readiness & AdSense
