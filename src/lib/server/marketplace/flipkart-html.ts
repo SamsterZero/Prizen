@@ -76,6 +76,14 @@ function pagePrice(html: string, offerPrice: unknown) {
 	return null;
 }
 
+function isChallengePage(html: string) {
+	const title = decodeHtml(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] ?? '');
+	if (/captcha|verify you are human|access denied|unusual traffic/i.test(title)) return true;
+	return /<(?:form|iframe)[^>]+(?:action|src)=["'][^"']*(?:captcha|challenge)[^"']*["']/i.test(
+		html
+	);
+}
+
 function canonicalUrl(input: URL, productId: string) {
 	const url = new URL(input.toString());
 	url.protocol = 'https:';
@@ -109,11 +117,17 @@ export async function fetchFlipkartHtmlSnapshot(
 		throw new MarketplaceFetchError('Prizen could not reach this Flipkart product page.', 502);
 	}
 	const finalUrl = response.url ? new URL(response.url) : new URL(url);
+	if (response.status === 429) {
+		throw new MarketplaceFetchError(
+			'Flipkart temporarily blocked this product check. Prizen will retry later.',
+			429
+		);
+	}
 	if (!response.ok || !isFlipkartUrl(finalUrl)) {
 		throw new MarketplaceFetchError('Flipkart did not return a product page for this link.', 502);
 	}
 	const html = await response.text();
-	if (/captcha|verify you are human|access denied|unusual traffic/i.test(html)) {
+	if (isChallengePage(html)) {
 		throw new MarketplaceFetchError(
 			'Flipkart temporarily blocked this product check. Prizen will retry later.',
 			429

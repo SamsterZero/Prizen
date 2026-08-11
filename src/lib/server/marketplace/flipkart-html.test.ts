@@ -35,6 +35,16 @@ describe('Flipkart bounded HTML adapter', () => {
 		assert.equal(snapshot.url, 'https://www.flipkart.com/example/p/itm123?pid=MOBABC123456');
 	});
 
+	test('ignores dormant captcha code on a normal product page', async () => {
+		const snapshot = await fetchFlipkartHtmlSnapshot(url, (async () =>
+			page(`<title>Example phone</title>
+					<script>const captchaModule = "available when challenged";</script>
+					<meta property="product:price:amount" content="12999">
+					<meta property="product:price:currency" content="INR">`)) as typeof fetch);
+		assert.equal(snapshot.title, 'Example phone');
+		assert.equal(snapshot.currentPrice, 12999);
+	});
+
 	test('does not try to evade challenge pages', async () => {
 		await assert.rejects(
 			fetchFlipkartHtmlSnapshot(url, (async () =>
