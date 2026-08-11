@@ -1,14 +1,25 @@
 name: prizen-local
 
 services:
+  init:
+    image: prizen:local
+    pull_policy: never
+    build: .
+    restart: 'no'
+    entrypoint: ['bun', 'scripts/init-secrets.ts']
+    environment:
+      PRIZEN_DATABASE_PASSWORD: ${PRIZEN_DATABASE_PASSWORD:-}
+    volumes:
+      - prizen_secrets:/run/secrets/prizen
+
   migrate:
     image: prizen:local
     pull_policy: never
     build: .
     command: bun run db:migrate
     environment:
-      PRIZEN_DB_USER: prizen
-      PRIZEN_DB_NAME: prizen
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes:
       - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
@@ -23,9 +34,11 @@ services:
     ports:
       - 127.0.0.1:3000:3000
     environment:
-      ORIGIN: http://localhost:3000
-      PRIZEN_DB_USER: prizen
-      PRIZEN_DB_NAME: prizen
+      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
+      TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes:
       - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
@@ -50,8 +63,10 @@ services:
     command: bun scripts/tracker.ts
     environment:
       APP_URL: http://app:3000
-      PRIZEN_DB_USER: prizen
-      PRIZEN_DB_NAME: prizen
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY}
+      TRACKER_TOKEN: ${TRACKER_TOKEN:?Set TRACKER_TOKEN}
+      PRIZEN_DB_USER: ${PRIZEN_DB_USER:-prizen}
+      PRIZEN_DB_NAME: ${PRIZEN_DB_NAME:-prizen}
     volumes:
       - prizen_secrets:/run/secrets/prizen:ro
     depends_on:
@@ -71,14 +86,17 @@ services:
     ports:
       - 127.0.0.1:5432:5432
     environment:
-      POSTGRES_USER: prizen
+      POSTGRES_USER: ${PRIZEN_DB_USER:-prizen}
       POSTGRES_PASSWORD_FILE: /run/secrets/prizen/database-password
-      POSTGRES_DB: prizen
+      POSTGRES_DB: ${PRIZEN_DB_NAME:-prizen}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - prizen_secrets:/run/secrets/prizen:ro
+    depends_on:
+      init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U prizen -d prizen']
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
       interval: 10s
       timeout: 5s
       retries: 5
