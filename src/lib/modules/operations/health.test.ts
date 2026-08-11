@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
-import { backupHealth, formatAge, trackerHealth } from './health';
+import { backupHealth, formatAge, formatCount, trackerHealth } from './health';
 
 const now = new Date('2026-08-11T12:00:00.000Z');
 
@@ -18,5 +18,13 @@ describe('operations health thresholds', () => {
 		assert.equal(backupHealth('2026-08-09T12:00:00.000Z', now), 'warning');
 		assert.equal(backupHealth('2026-08-01T12:00:00.000Z', now), 'critical');
 		assert.equal(formatAge('2026-08-09T12:00:00.000Z', now), '2d ago');
+	});
+
+	test('formats large counts using compact units', () => {
+		assert.equal(formatCount(999), '999');
+		assert.equal(formatCount(1_000), '1K');
+		assert.equal(formatCount(12_500), '12.5K');
+		assert.equal(formatCount(2_300_000), '2.3M');
+		assert.equal(formatCount(4_000_000_000), '4B');
 	});
 });

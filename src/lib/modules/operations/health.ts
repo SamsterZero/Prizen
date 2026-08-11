@@ -1,5 +1,16 @@
 export type HealthLevel = 'healthy' | 'warning' | 'critical' | 'unknown';
 
+const compactNumberFormatter = new Intl.NumberFormat('en', {
+	notation: 'compact',
+	compactDisplay: 'short',
+	maximumFractionDigits: 1
+});
+
+export function formatCount(value: number) {
+	if (!Number.isFinite(value)) return '0';
+	return compactNumberFormatter.format(value);
+}
+
 export function ageInSeconds(value: string | Date | null, now = new Date()) {
 	if (!value) return null;
 	const timestamp = new Date(value).getTime();

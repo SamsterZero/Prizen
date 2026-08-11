@@ -3,7 +3,7 @@
 	import LogoMark from '$lib/components/logo-mark.svelte';
 	import ThemeToggle from '$lib/components/theme-toggle.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { formatAge, type HealthLevel } from '$lib/modules/operations/health';
+	import { formatAge, formatCount, type HealthLevel } from '$lib/modules/operations/health';
 	import {
 		Activity,
 		ArrowLeft,
@@ -125,10 +125,10 @@
 					</div>
 				</div>
 				<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-					{#each [['Pending', data.scans.pending], ['Running', data.scans.running], ['Failed', data.scans.failed], ['Overdue', data.scans.overdue]] as metric (metric[0])}
+					{#each [{ label: 'Pending', value: data.scans.pending }, { label: 'Running', value: data.scans.running }, { label: 'Failed', value: data.scans.failed }, { label: 'Overdue', value: data.scans.overdue }] as metric (metric.label)}
 						<div class="rounded-xl bg-slate-50 p-3">
-							<p class="text-xs font-bold text-slate-500">{metric[0]}</p>
-							<p class="mt-1 text-2xl font-black">{metric[1]}</p>
+							<p class="text-xs font-bold text-slate-500">{metric.label}</p>
+							<p class="mt-1 text-2xl font-black">{formatCount(metric.value)}</p>
 						</div>
 					{/each}
 				</div>
@@ -150,10 +150,10 @@
 					</div>
 				</div>
 				<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-					{#each [['Verified', data.notifications.verified_channels], ['Pending', data.notifications.pending], ['Sent · 24h', data.notifications.delivered_24h], ['Failed · 24h', data.notifications.failed_24h]] as metric (metric[0])}
+					{#each [{ label: 'Verified', value: data.notifications.verified_channels }, { label: 'Pending', value: data.notifications.pending }, { label: 'Sent · 24h', value: data.notifications.delivered_24h }, { label: 'Failed · 24h', value: data.notifications.failed_24h }] as metric (metric.label)}
 						<div class="rounded-xl bg-slate-50 p-3">
-							<p class="text-xs font-bold text-slate-500">{metric[0]}</p>
-							<p class="mt-1 text-2xl font-black">{metric[1]}</p>
+							<p class="text-xs font-bold text-slate-500">{metric.label}</p>
+							<p class="mt-1 text-2xl font-black">{formatCount(metric.value)}</p>
 						</div>
 					{/each}
 				</div>
@@ -189,11 +189,11 @@
 					</div>
 					<div class="rounded-xl bg-slate-50 p-3">
 						<p class="text-xs font-bold text-slate-500">Observations</p>
-						<p class="mt-1 text-xl font-black">{data.storage.observation_count}</p>
+						<p class="mt-1 text-xl font-black">{formatCount(data.storage.observation_count)}</p>
 					</div>
 					<div class="rounded-xl bg-slate-50 p-3">
 						<p class="text-xs font-bold text-slate-500">Added · 24h</p>
-						<p class="mt-1 text-xl font-black">{data.storage.observations_24h}</p>
+						<p class="mt-1 text-xl font-black">{formatCount(data.storage.observations_24h)}</p>
 					</div>
 					<div class="rounded-xl bg-slate-50 p-3">
 						<Clock3 aria-hidden="true" size={15} class="text-slate-400" />
