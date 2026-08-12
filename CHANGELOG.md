@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Release acceptance now waits for settings navigation and hydration requests to become idle
+- Delivery pincode browser validation now correctly accepts exactly six digits
 
 ## [0.3.0-rc.3] - 2026-08-12
 
