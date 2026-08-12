@@ -639,7 +639,7 @@
 										class="mt-2 w-full rounded-xl border-slate-300"
 										bind:value={deliveryPincode}
 										inputmode="numeric"
-										pattern="[0-9]{6}"
+										pattern="[0-9][0-9][0-9][0-9][0-9][0-9]"
 										maxlength="6"
 										placeholder="560001"
 										required
