@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0-rc.3] - 2026-08-12
+
+### Fixed
+
+- Release acceptance now verifies observable settings hydration before replacing form values
+
 ## [0.3.0-rc.2] - 2026-08-12
 
 ### Fixed
@@ -64,7 +70,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Reproducible Tracking MVP release acceptance and recovery checks
 - One-command production Compose deployment with persistent generated secrets and explicit migrations
 
-[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.3.0-rc.2...HEAD
+[Unreleased]: https://github.com/SamsterZero/Prizen/compare/v0.3.0-rc.3...HEAD
+[0.3.0-rc.3]: https://github.com/SamsterZero/Prizen/compare/v0.3.0-rc.2...v0.3.0-rc.3
 [0.3.0-rc.2]: https://github.com/SamsterZero/Prizen/compare/v0.3.0-rc.1...v0.3.0-rc.2
 [0.3.0-rc.1]: https://github.com/SamsterZero/Prizen/compare/v0.2.0...v0.3.0-rc.1
 [0.2.0]: https://github.com/SamsterZero/Prizen/compare/v0.1.0...v0.2.0
