@@ -84,19 +84,19 @@ test('settings primary actions submit their forms', async ({ page }) => {
 	const deliveryPincode = page.getByLabel('Delivery pincode');
 	await deliveryPincode.fill('560001');
 	await page.getByRole('button', { name: 'Save location' }).click();
-	await expect(page.getByText('Delivery location saved.')).toBeVisible();
+	await expect(page.locator('#delivery').getByText('Delivery location saved.')).toBeVisible();
 	await expect.poll(() => deliveryRequest).toEqual({ deliveryPincode: '560001' });
 
 	await page.goto('/settings/marketplaces');
 	await page.waitForLoadState('networkidle');
 	await page.getByRole('button', { name: 'Save Amazon settings' }).click();
-	await expect(page.getByText('Amazon settings saved.')).toBeVisible();
+	await expect(page.locator('#marketplaces').getByText('Amazon settings saved.')).toBeVisible();
 	await expect.poll(() => marketplaceRequest).toMatchObject({ dataSource: 'html' });
 	await page.getByLabel('Data source').last().selectOption('affiliate-api');
 	await page.getByLabel('Affiliate ID').fill('owner-id');
 	await page.getByLabel('Affiliate token').fill('owner-token');
 	await page.getByRole('button', { name: 'Save Flipkart settings' }).click();
-	await expect(page.getByText('Flipkart settings saved.')).toBeVisible();
+	await expect(page.locator('#marketplaces').getByText('Flipkart settings saved.')).toBeVisible();
 	await expect
 		.poll(() => flipkartRequest)
 		.toEqual({
