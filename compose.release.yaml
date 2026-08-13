@@ -15,7 +15,7 @@ services:
       - prizen_secrets:/run/secrets/prizen
 
   db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${PRIZEN_DB_USER:-prizen}
